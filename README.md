@@ -1,52 +1,56 @@
-# S.U.D.I. — Sprint 1 (Demo funcional)
+# S.U.D.I. — Sistema Único de Información (Residencial Los Robles)
 
-Sistema Único de Información para el **Residencial Los Robles**.
-Este repositorio contiene el código del **Sprint 1** del proyecto S.U.D.I., desarrollado para la
-actividad integradora *"Sprint, el corazón de Scrum"* de la materia Proyecto 2 (metodología ágil
-Scrum), UDG Plus.
+Plataforma web para la gestión del Residencial Los Robles, desarrollada con **React** siguiendo
+la metodología ágil **Scrum** (materia Proyecto 2, UDG Virtual). El proyecto parte de la EDT/WBS
+documentada en Proyecto 1 y de un Product Backlog de 14 historias de usuario organizadas en 3 sprints.
 
-El proyecto completo (EDT, Product Backlog, Sprint Backlog) se documentó previamente en las
-actividades de Proyecto 1 y Proyecto 2. Este código implementa, en React, las cinco historias de
-usuario que integraron el Sprint 1.
+## Estado del proyecto por sprint
 
-## Relación con el Product Backlog / Sprint 1
+| Sprint | Historias | Puntos | Estado en este repositorio |
+|---|---|---|---|
+| Sprint 1 | HU-01 a HU-05 (usuarios, roles, login, cuotas, estado de cuenta) | 19 | **Completado** (con ajustes de revisión) |
+| Sprint 2 | HU-06 a HU-10 (pagos, notificaciones, reportes, avisos) | 17 | Planificado — se desarrolla en la siguiente fase |
+| Sprint 3 | HU-11 a HU-14 (emergencias, incidencias, mantenimiento, votaciones) | 23 | Planificado — se desarrolla en la fase posterior |
 
-| Historia | Descripción | Componente | Prioridad | Puntos |
-|---|---|---|---|---|
-| HU-01 | Registro y administración de residentes | `RegistroResidentes` | Alta | 3 |
-| HU-02 | Roles y permisos (presidente, tesorera, secretario, residente) | `RolesPermisos` | Alta | 5 |
-| HU-03 | Inicio de sesión y recuperación de acceso | `Login` | Alta | 3 |
-| HU-04 | Registro de cuotas y adeudos | `Cuotas` | Alta | 5 |
-| HU-05 | Consulta de estado de cuenta | `EstadoCuenta` | Alta | 3 |
+Avance acumulado: 19 de 59 puntos (32 %). Este repositorio solo contiene código de los sprints
+marcados como completados; los demás se irán agregando conforme se desarrollen.
 
-Cada historia corresponde a un paquete de trabajo de la EDT del proyecto (Proyecto 1, sección 1.4
-Desarrollo del sistema — módulos de usuarios/seguridad y financiero) y a una tarjeta del Sprint 1
-en el tablero de Trello del proyecto.
+## Sprint 1 — historias implementadas
 
-## Objetivo del sprint
+| Historia | Componente (`src/App.jsx`) | Qué hace |
+|---|---|---|
+| HU-01 Registro de residentes | `RegistroResidentes` | Valida campos obligatorios, contraseña de mínimo 4 caracteres y correo duplicado |
+| HU-02 Roles y permisos | `RolesPermisos`, `ACCESS`, `canAccess` | Asigna roles y restringe cada sección según el rol; muestra la matriz de permisos |
+| HU-03 Inicio de sesión | `Login` | Valida correo y contraseña; recuperación de contraseña simulada |
+| HU-04 Cuotas y adeudos | `Cuotas` | Registra cuotas por residente, mes y monto; control de pagado/pendiente |
+| HU-05 Estado de cuenta | `EstadoCuenta` | Calcula total pagado y adeudo; el residente solo ve su propia cuenta |
 
-> "Dejar operativo el registro, la autenticación y los roles de los residentes, junto con el
-> registro de cuotas y la consulta de estado de cuenta, de modo que los siguientes sprints puedan
-> construirse sobre una base de usuarios y datos financieros ya funcional."
+## Ajustes del Sprint 1 (revisión)
 
-## Cómo funciona
+- **A5 (HU-01):** la contraseña se valida (mínimo 4 caracteres).
+- **A6 (HU-02):** cada rol solo accede a sus secciones; las restringidas muestran un candado.
+- **A7 (HU-02):** el cambio de rol se refleja de inmediato en la sesión abierta.
+- **A8 (HU-01/03):** el correo se normaliza (espacios y mayúsculas) al registrar y al iniciar sesión.
+- **A9 (HU-05):** un residente solo puede consultar su propio estado de cuenta.
 
-La aplicación es una demo de una sola página (sin backend) pensada para validar el flujo y las
-reglas de negocio de cada historia antes de conectarlas a una base de datos real:
+### Matriz de permisos
 
-- **Registro de residentes**: formulario que valida campos obligatorios y correo duplicado, y
-  agrega el residente a la lista con rol por defecto "Residente".
-- **Roles y permisos**: tabla editable donde la mesa directiva reasigna el rol de cada residente
-  (Presidente, Tesorera, Secretario, Residente).
-- **Inicio de sesión**: valida correo/contraseña contra los residentes registrados y simula el
-  flujo de recuperación de contraseña por correo.
-- **Cuotas y adeudos**: registra cuotas por residente/mes/monto y permite marcarlas como pagadas.
-- **Estado de cuenta**: calcula, por residente, el total pagado y el adeudo pendiente a partir de
-  sus cuotas.
+| Sección | Presidente | Tesorera | Secretario | Residente | Sin sesión |
+|---|:-:|:-:|:-:|:-:|:-:|
+| Registro de residentes | ✓ | ✓ | ✓ | ✓ | ✓ |
+| Inicio de sesión | ✓ | ✓ | ✓ | ✓ | ✓ |
+| Roles y permisos | ✓ | — | — | — | — |
+| Cuotas y adeudos | ✓ | ✓ | — | — | — |
+| Estado de cuenta | ✓ | ✓ | ✓ | ✓ | — |
 
-El estado se mantiene en memoria (`useState`) durante la sesión del navegador; no persiste datos
-en disco. En una siguiente iteración este estado se sustituiría por llamadas a la API/base de
-datos definida en la materia de Base de Datos.
+## Cuentas de prueba (contraseña `1234`)
+
+| Rol | Correo |
+|---|---|
+| Presidente | ana.torres@losrobles.mx |
+| Tesorera | carlos.medina@losrobles.mx |
+| Secretario | marta.reyes@losrobles.mx |
+| Residente | jorge.paredes@losrobles.mx |
 
 ## Cómo ejecutarlo
 
@@ -59,17 +63,18 @@ npm run dev
 
 Abre la URL que muestra la terminal (normalmente `http://localhost:5173`).
 
-Cuenta de prueba para iniciar sesión: `ana.torres@losrobles.mx` / `1234`
+## Limitaciones conocidas
+
+- El estado vive en memoria (`useState`): al recargar la página los datos vuelven a los valores iniciales.
+- La recuperación de contraseña es una simulación; no envía correos reales.
+- Las contraseñas se guardan en texto plano dentro del estado de la demo; en producción se usaría
+  autenticación con cifrado y una base de datos.
 
 ## Stack técnico
 
-- [React 18](https://react.dev/)
-- [Vite](https://vitejs.dev/) como bundler de desarrollo
-- [Tailwind CSS](https://tailwindcss.com/) para estilos
-- [lucide-react](https://lucide.dev/) para iconografía
+React 18 · Vite · Tailwind CSS · lucide-react
 
 ## Autor
 
-Juan Antonio Fuentes Herrera — Licenciatura en Desarrollo de Sistemas Web, UDG Plus.
-Proyecto base (EDT / WBS): equipo S.U.D.I. (Proyecto 1) — Jorge Luis Espinosa Acosta, Juan Antonio
-Fuentes Herrera, Melissa Suzette Jimenez Alvarado, Jorge Eduardo Ledesma Cruz.
+Juan Antonio Fuentes Herrera — Licenciatura en Desarrollo de Sistemas Web, UDG Virtual.
+Proyecto base (EDT / WBS): equipo S.U.D.I. de Proyecto 1.
