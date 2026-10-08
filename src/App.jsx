@@ -9,27 +9,35 @@ import {
   LogOut,
   CheckCircle2,
   Circle,
+  Lock,
 } from "lucide-react";
 
 /*
   S.U.D.I. — Sistema Único de Información, Residencial Los Robles
-  Demo funcional del Sprint 1 (Actividad integradora, Proyecto 2 — Scrum)
+  Sprint 1 · Unidad 3, Actividad 1 (Proyecto 2 — Scrum) · versión con ajustes de la revisión
 
-  Cada sección de este archivo implementa una historia de usuario del
-  Sprint 1 (ver Product Backlog / Sprint Backlog de la Actividad 2):
+  Cada sección implementa una historia de usuario del Sprint 1:
 
     HU-01  Registro y administración de residentes   -> RegistroResidentes
-    HU-02  Roles y permisos                          -> RolesPermisos
+    HU-02  Roles y permisos                          -> RolesPermisos + control de acceso
     HU-03  Inicio de sesión y recuperación de acceso  -> Login
     HU-04  Registro de cuotas y adeudos               -> Cuotas
     HU-05  Consulta de estado de cuenta               -> EstadoCuenta
 
-  No usa backend: el estado vive en memoria (useState) para efectos de
-  esta demo académica. En producción cada función quedaría conectada a
-  la base de datos definida en el proyecto de Base de Datos.
+  Ajustes de esta versión (revisión del Sprint 1):
+    A5  HU-01  La contraseña se valida (mínimo 4 caracteres).
+    A6  HU-02  Cada rol solo accede a sus secciones (ACCESS) y se muestra la matriz de permisos.
+    A7  HU-02  El rol se refleja de inmediato en la sesión: el usuario activo se deriva de la
+               lista de residentes y no de una copia.
+    A8  HU-01/03  El correo se normaliza (espacios y mayúsculas) al registrar y al iniciar sesión.
+    A9  HU-05  Un residente solo puede consultar su propio estado de cuenta.
+
+  No usa backend: el estado vive en memoria (useState). Al recargar la página los datos
+  vuelven a los valores iniciales. En una iteración posterior se conectará a una base de datos.
 */
 
 const ROLES = ["Presidente", "Tesorera", "Secretario", "Residente"];
+const MESA_DIRECTIVA = ["Presidente", "Tesorera", "Secretario"];
 
 const initialResidentes = [
   { id: 1, nombre: "Ana Torres", email: "ana.torres@losrobles.mx", telefono: "442-100-0001", vivienda: "A-12", rol: "Presidente", password: "1234" },
@@ -52,6 +60,23 @@ const TABS = [
   { id: "estado", label: "Estado de cuenta", hu: "HU-05", icon: Receipt },
 ];
 
+// Roles con acceso a cada sección (null = pública, sin necesidad de sesión)
+const ACCESS = {
+  registro: null,
+  login: null,
+  roles: ["Presidente"],
+  cuotas: ["Presidente", "Tesorera"],
+  estado: ["Presidente", "Tesorera", "Secretario", "Residente"],
+};
+
+function canAccess(tabId, user) {
+  const allowed = ACCESS[tabId];
+  if (allowed === null) return true;
+  return !!user && allowed.includes(user.rol);
+}
+
+const normalizeEmail = (value) => value.trim().toLowerCase();
+
 function HuBadge({ children }) {
   return (
     <span className="inline-block text-xs font-medium text-amber-800 bg-amber-50 border border-amber-200 rounded px-2 py-0.5">
@@ -72,6 +97,29 @@ function Field({ label, children }) {
 const inputClass =
   "w-full border border-stone-300 rounded px-3 py-2 text-sm text-stone-800 focus:outline-none focus:ring-2 focus:ring-emerald-700 focus:border-emerald-700";
 
+function AccesoRestringido({ tab, user }) {
+  const allowed = ACCESS[tab.id];
+  return (
+    <div>
+      <div className="flex items-center gap-2 mb-1">
+        <h2 className="text-xl font-serif text-emerald-900">{tab.label}</h2>
+        <HuBadge>{tab.hu} · Sprint 1</HuBadge>
+      </div>
+      <div className="max-w-md bg-white border border-stone-200 rounded p-5 mt-6">
+        <div className="flex items-center gap-2 text-amber-800 mb-2">
+          <Lock size={18} />
+          <p className="font-medium">Acceso restringido</p>
+        </div>
+        <p className="text-sm text-stone-600">
+          {user
+            ? `Tu rol actual (${user.rol}) no tiene permiso para esta sección. Roles con acceso: ${allowed.join(", ")}.`
+            : `Inicia sesión para entrar a esta sección. Roles con acceso: ${allowed.join(", ")}.`}
+        </p>
+      </div>
+    </div>
+  );
+}
+
 function RegistroResidentes({ residentes, onRegistrar }) {
   const [form, setForm] = useState({ nombre: "", email: "", telefono: "", vivienda: "", password: "" });
   const [error, setError] = useState("");
@@ -79,20 +127,26 @@ function RegistroResidentes({ residentes, onRegistrar }) {
 
   function handleSubmit(e) {
     e.preventDefault();
-    if (!form.nombre || !form.email || !form.vivienda || !form.password) {
+    const email = normalizeEmail(form.email);
+    if (!form.nombre.trim() || !email || !form.vivienda.trim() || !form.password) {
       setError("Completa nombre, correo, vivienda y contraseña.");
       setOk("");
       return;
     }
-    if (residentes.some((r) => r.email === form.email)) {
+    if (form.password.length < 4) {
+      setError("La contraseña debe tener al menos 4 caracteres.");
+      setOk("");
+      return;
+    }
+    if (residentes.some((r) => normalizeEmail(r.email) === email)) {
       setError("Ya existe un residente registrado con ese correo.");
       setOk("");
       return;
     }
-    onRegistrar(form);
+    onRegistrar({ ...form, email });
     setForm({ nombre: "", email: "", telefono: "", vivienda: "", password: "" });
     setError("");
-    setOk(`Residente "${form.nombre}" registrado correctamente.`);
+    setOk(`Residente "${form.nombre}" registrado correctamente. Ya puede iniciar sesión.`);
   }
 
   return (
@@ -158,6 +212,40 @@ function RegistroResidentes({ residentes, onRegistrar }) {
   );
 }
 
+function MatrizPermisos() {
+  const puede = (tabId, rol) => {
+    const allowed = ACCESS[tabId];
+    return allowed === null || allowed.includes(rol);
+  };
+  return (
+    <div className="mb-8 overflow-x-auto">
+      <h3 className="text-sm font-medium text-stone-500 uppercase tracking-wide mb-2">Matriz de permisos por rol</h3>
+      <table className="w-full text-sm">
+        <thead>
+          <tr className="text-left text-stone-500 border-b border-stone-300">
+            <th className="py-2 pr-4">Sección</th>
+            {ROLES.map((rol) => (
+              <th key={rol} className="py-2 pr-4 text-center">{rol}</th>
+            ))}
+            <th className="py-2 text-center">Sin sesión</th>
+          </tr>
+        </thead>
+        <tbody>
+          {TABS.map((t) => (
+            <tr key={t.id} className="border-b border-stone-100">
+              <td className="py-2 pr-4 text-stone-800">{t.label}</td>
+              {ROLES.map((rol) => (
+                <td key={rol} className="py-2 pr-4 text-center text-stone-600">{puede(t.id, rol) ? "✓" : "—"}</td>
+              ))}
+              <td className="py-2 text-center text-stone-600">{ACCESS[t.id] === null ? "✓" : "—"}</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  );
+}
+
 function RolesPermisos({ residentes, onCambiarRol }) {
   return (
     <div>
@@ -170,6 +258,9 @@ function RolesPermisos({ residentes, onCambiarRol }) {
         usuario acceda solo a las funciones que le corresponden.
       </p>
 
+      <MatrizPermisos />
+
+      <h3 className="text-sm font-medium text-stone-500 uppercase tracking-wide mb-2">Asignación de roles</h3>
       <div className="overflow-x-auto">
         <table className="w-full text-sm">
           <thead>
@@ -186,6 +277,7 @@ function RolesPermisos({ residentes, onCambiarRol }) {
                 <td className="py-2 pr-4 text-stone-600">{r.vivienda}</td>
                 <td className="py-2 pr-4">
                   <select
+                    aria-label={`Rol de ${r.nombre}`}
                     className="border border-stone-300 rounded px-2 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-700"
                     value={r.rol}
                     onChange={(e) => onCambiarRol(r.id, e.target.value)}
@@ -214,24 +306,30 @@ function Login({ residentes, currentUser, onLogin, onLogout }) {
 
   function handleSubmit(e) {
     e.preventDefault();
-    const found = residentes.find((r) => r.email === email && r.password === password);
+    const found = residentes.find((r) => normalizeEmail(r.email) === normalizeEmail(email) && r.password === password);
     if (!found) {
       setError("Correo o contraseña incorrectos.");
       return;
     }
     setError("");
+    setEmail("");
+    setPassword("");
     onLogin(found);
   }
 
   function handleRecovery(e) {
     e.preventDefault();
-    const found = residentes.find((r) => r.email === recoveryEmail);
+    const found = residentes.find((r) => normalizeEmail(r.email) === normalizeEmail(recoveryEmail));
     setRecoveryMsg(
       found
-        ? `Se envió un enlace de recuperación a ${recoveryEmail}.`
+        ? `Se envió un enlace de recuperación a ${recoveryEmail.trim()} (simulado en esta demo).`
         : "No encontramos ninguna cuenta con ese correo."
     );
   }
+
+  const seccionesDisponibles = currentUser
+    ? TABS.filter((t) => canAccess(t.id, currentUser)).map((t) => t.label)
+    : [];
 
   return (
     <div>
@@ -247,7 +345,9 @@ function Login({ residentes, currentUser, onLogin, onLogout }) {
       {currentUser ? (
         <div className="max-w-md bg-white border border-stone-200 rounded p-5">
           <p className="text-sm text-stone-600 mb-1">Sesión iniciada como</p>
-          <p className="text-lg text-emerald-900 font-medium mb-4">{currentUser.nombre} · {currentUser.rol}</p>
+          <p className="text-lg text-emerald-900 font-medium mb-3">{currentUser.nombre} · {currentUser.rol}</p>
+          <p className="text-xs text-stone-500 mb-1">Secciones disponibles para tu rol:</p>
+          <p className="text-sm text-stone-700 mb-4">{seccionesDisponibles.join(" · ")}</p>
           <button onClick={onLogout} className="flex items-center gap-2 text-sm text-stone-700 border border-stone-300 rounded px-4 py-2 hover:bg-stone-100">
             <LogOut size={16} /> Cerrar sesión
           </button>
@@ -262,11 +362,21 @@ function Login({ residentes, currentUser, onLogin, onLogout }) {
               <input type="password" className={inputClass} value={password} onChange={(e) => setPassword(e.target.value)} placeholder="Contraseña" />
             </Field>
             {error && <p className="text-sm text-red-700 mb-3">{error}</p>}
-            <button type="submit" className="bg-emerald-800 hover:bg-emerald-900 text-white text-sm font-medium px-4 py-2 rounded mb-2">
+            <button type="submit" className="bg-emerald-800 hover:bg-emerald-900 text-white text-sm font-medium px-4 py-2 rounded mb-3">
               Iniciar sesión
             </button>
           </form>
-          <p className="text-xs text-stone-500 mb-2">Cuenta de prueba: ana.torres@losrobles.mx / 1234</p>
+
+          <div className="text-xs text-stone-500 mb-3 border-t border-stone-100 pt-3">
+            <p className="mb-1">Cuentas de prueba (contraseña 1234):</p>
+            <ul className="space-y-0.5">
+              <li>Presidente: ana.torres@losrobles.mx</li>
+              <li>Tesorera: carlos.medina@losrobles.mx</li>
+              <li>Secretario: marta.reyes@losrobles.mx</li>
+              <li>Residente: jorge.paredes@losrobles.mx</li>
+            </ul>
+          </div>
+
           <button onClick={() => setShowRecovery((v) => !v)} className="text-sm text-emerald-700 underline">
             ¿Olvidaste tu contraseña?
           </button>
@@ -296,11 +406,11 @@ function Cuotas({ residentes, cuotas, onAgregarCuota, onTogglePagado }) {
 
   function handleSubmit(e) {
     e.preventDefault();
-    if (!residenteId || !mes || !monto) {
+    if (!residenteId || !mes.trim() || !monto) {
       setError("Completa residente, mes y monto.");
       return;
     }
-    onAgregarCuota(Number(residenteId), mes, Number(monto));
+    onAgregarCuota(Number(residenteId), mes.trim(), Number(monto));
     setMes("");
     setError("");
   }
@@ -380,9 +490,13 @@ function Cuotas({ residentes, cuotas, onAgregarCuota, onTogglePagado }) {
 }
 
 function EstadoCuenta({ residentes, cuotas, currentUser }) {
-  const [residenteId, setResidenteId] = useState(currentUser?.id ?? residentes[0]?.id ?? "");
-  const residente = residentes.find((r) => r.id === Number(residenteId));
-  const cuotasResidente = cuotas.filter((c) => c.residenteId === Number(residenteId));
+  // Mesa directiva puede consultar a cualquier residente; un residente solo su propia cuenta (A9)
+  const esMesa = MESA_DIRECTIVA.includes(currentUser.rol);
+  const [seleccion, setSeleccion] = useState(currentUser.id);
+  const idActivo = esMesa ? Number(seleccion) : currentUser.id;
+
+  const residente = residentes.find((r) => r.id === idActivo);
+  const cuotasResidente = cuotas.filter((c) => c.residenteId === idActivo);
   const totalPagado = cuotasResidente.filter((c) => c.pagado).reduce((s, c) => s + c.monto, 0);
   const totalAdeudo = cuotasResidente.filter((c) => !c.pagado).reduce((s, c) => s + c.monto, 0);
 
@@ -398,13 +512,19 @@ function EstadoCuenta({ residentes, cuotas, currentUser }) {
       </p>
 
       <div className="max-w-md mb-6">
-        <Field label="Selecciona un residente">
-          <select className={inputClass} value={residenteId} onChange={(e) => setResidenteId(e.target.value)}>
-            {residentes.map((r) => (
-              <option key={r.id} value={r.id}>{r.nombre} · {r.vivienda}</option>
-            ))}
-          </select>
-        </Field>
+        {esMesa ? (
+          <Field label="Selecciona un residente">
+            <select className={inputClass} value={seleccion} onChange={(e) => setSeleccion(e.target.value)}>
+              {residentes.map((r) => (
+                <option key={r.id} value={r.id}>{r.nombre} · {r.vivienda}</option>
+              ))}
+            </select>
+          </Field>
+        ) : (
+          <p className="text-sm text-stone-600">
+            Cuenta de <span className="font-medium text-stone-800">{residente?.nombre}</span> · vivienda {residente?.vivienda}
+          </p>
+        )}
       </div>
 
       <div className="grid grid-cols-2 gap-4 max-w-md mb-8">
@@ -452,17 +572,21 @@ export default function App() {
   const [residentes, setResidentes] = useState(initialResidentes);
   const [cuotas, setCuotas] = useState(initialCuotas);
   const [activeTab, setActiveTab] = useState("registro");
-  const [currentUser, setCurrentUser] = useState(null);
+  const [currentUserId, setCurrentUserId] = useState(null);
+
+  // A7: el usuario en sesión se deriva de la lista, así un cambio de rol se refleja de inmediato
+  const currentUser = residentes.find((r) => r.id === currentUserId) ?? null;
+  const tabActual = TABS.find((t) => t.id === activeTab);
 
   function handleRegistrar(form) {
     setResidentes((prev) => [
       ...prev,
       {
         id: prev.length ? Math.max(...prev.map((r) => r.id)) + 1 : 1,
-        nombre: form.nombre,
+        nombre: form.nombre.trim(),
         email: form.email,
         telefono: form.telefono,
-        vivienda: form.vivienda,
+        vivienda: form.vivienda.trim(),
         rol: "Residente",
         password: form.password,
       },
@@ -484,6 +608,35 @@ export default function App() {
     setCuotas((prev) => prev.map((c) => (c.id === id ? { ...c, pagado: !c.pagado } : c)));
   }
 
+  function renderContenido() {
+    if (!canAccess(activeTab, currentUser)) {
+      return <AccesoRestringido tab={tabActual} user={currentUser} />;
+    }
+    switch (activeTab) {
+      case "registro":
+        return <RegistroResidentes residentes={residentes} onRegistrar={handleRegistrar} />;
+      case "roles":
+        return <RolesPermisos residentes={residentes} onCambiarRol={handleCambiarRol} />;
+      case "login":
+        return (
+          <Login
+            residentes={residentes}
+            currentUser={currentUser}
+            onLogin={(r) => setCurrentUserId(r.id)}
+            onLogout={() => setCurrentUserId(null)}
+          />
+        );
+      case "cuotas":
+        return (
+          <Cuotas residentes={residentes} cuotas={cuotas} onAgregarCuota={handleAgregarCuota} onTogglePagado={handleTogglePagado} />
+        );
+      case "estado":
+        return <EstadoCuenta key={currentUser.id} residentes={residentes} cuotas={cuotas} currentUser={currentUser} />;
+      default:
+        return null;
+    }
+  }
+
   return (
     <div className="min-h-screen bg-stone-50 flex text-stone-800">
       <aside className="w-64 bg-emerald-900 text-emerald-50 flex flex-col">
@@ -498,6 +651,7 @@ export default function App() {
           {TABS.map((tab) => {
             const Icon = tab.icon;
             const active = activeTab === tab.id;
+            const bloqueada = !canAccess(tab.id, currentUser);
             return (
               <button
                 key={tab.id}
@@ -510,26 +664,27 @@ export default function App() {
               >
                 <Icon size={17} />
                 <span className="flex-1">{tab.label}</span>
+                {bloqueada && <Lock size={14} className="text-emerald-400" aria-label="Sección restringida" />}
               </button>
             );
           })}
         </nav>
+        <div className="px-5 py-3 border-t border-emerald-800 text-xs">
+          {currentUser ? (
+            <>
+              <p className="text-emerald-50">{currentUser.nombre}</p>
+              <p className="text-emerald-300">{currentUser.rol}</p>
+            </>
+          ) : (
+            <p className="text-emerald-300">Sin sesión iniciada</p>
+          )}
+        </div>
         <div className="px-5 py-4 border-t border-emerald-800 text-xs text-emerald-300">
           Sprint 1 · Proyecto S.U.D.I.<br />Materia Proyecto 2 — Scrum
         </div>
       </aside>
 
-      <main className="flex-1 px-8 py-8 max-w-3xl">
-        {activeTab === "registro" && <RegistroResidentes residentes={residentes} onRegistrar={handleRegistrar} />}
-        {activeTab === "roles" && <RolesPermisos residentes={residentes} onCambiarRol={handleCambiarRol} />}
-        {activeTab === "login" && (
-          <Login residentes={residentes} currentUser={currentUser} onLogin={setCurrentUser} onLogout={() => setCurrentUser(null)} />
-        )}
-        {activeTab === "cuotas" && (
-          <Cuotas residentes={residentes} cuotas={cuotas} onAgregarCuota={handleAgregarCuota} onTogglePagado={handleTogglePagado} />
-        )}
-        {activeTab === "estado" && <EstadoCuenta residentes={residentes} cuotas={cuotas} currentUser={currentUser} />}
-      </main>
+      <main className="flex-1 px-8 py-8 max-w-3xl">{renderContenido()}</main>
     </div>
   );
 }
