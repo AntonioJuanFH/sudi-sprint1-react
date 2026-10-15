@@ -10,27 +10,45 @@ import {
   CheckCircle2,
   Circle,
   Lock,
+  FileCheck2,
+  BellRing,
+  BarChart3,
+  Megaphone,
+  PenSquare,
+  AlertTriangle,
+  Download,
+  Printer,
+  Clock,
 } from "lucide-react";
 
 /*
   S.U.D.I. — Sistema Único de Información, Residencial Los Robles
-  Sprint 1 · Unidad 3, Actividad 1 (Proyecto 2 — Scrum) · versión con ajustes de la revisión
+  Sprint 2 · Unidad 3, Actividad 2 (Proyecto 2 — Scrum)
 
-  Cada sección implementa una historia de usuario del Sprint 1:
-
+  Sprint 1 (completado):
     HU-01  Registro y administración de residentes   -> RegistroResidentes
     HU-02  Roles y permisos                          -> RolesPermisos + control de acceso
     HU-03  Inicio de sesión y recuperación de acceso  -> Login
     HU-04  Registro de cuotas y adeudos               -> Cuotas
     HU-05  Consulta de estado de cuenta               -> EstadoCuenta
 
-  Ajustes de esta versión (revisión del Sprint 1):
-    A5  HU-01  La contraseña se valida (mínimo 4 caracteres).
-    A6  HU-02  Cada rol solo accede a sus secciones (ACCESS) y se muestra la matriz de permisos.
-    A7  HU-02  El rol se refleja de inmediato en la sesión: el usuario activo se deriva de la
-               lista de residentes y no de una copia.
-    A8  HU-01/03  El correo se normaliza (espacios y mayúsculas) al registrar y al iniciar sesión.
-    A9  HU-05  Un residente solo puede consultar su propio estado de cuenta.
+  Sprint 2 (esta versión):
+    HU-06  Validación de pagos con comprobante        -> Pagos
+    HU-07  Notificaciones automáticas de adeudo       -> Adeudos
+    HU-08  Reportes de recaudación                    -> Reportes
+    HU-09  Avisos generales                           -> PublicarAvisos + Avisos
+    HU-10  Notificaciones urgentes                    -> PublicarAvisos + Avisos
+
+  Ajustes de la revisión del Sprint 1 (versión anterior): A5–A9.
+  Ajustes del Sprint 2 (esta versión):
+    A11  HU-04  Fecha límite de pago obligatoria en cada cuota (pendiente P1).
+    A12  HU-06  El comprobante solo acepta imagen o PDF.
+    A13  HU-06  Una cuota solo pasa a pagada por validación; se elimina el cambio libre
+                pagado/pendiente del Sprint 1 y el pago en ventanilla queda registrado.
+    A14  HU-06  Nadie puede validar su propio comprobante (separación de funciones).
+    A15  HU-07  Además de los adeudos vencidos, recordatorio a cuotas que vencen en 3 días.
+    A16  HU-08  Exportación a CSV e impresión / PDF del reporte.
+    A17  HU-10  Historial de avisos y notificaciones urgentes publicados.
 
   No usa backend: el estado vive en memoria (useState). Al recargar la página los datos
   vuelven a los valores iniciales. En una iteración posterior se conectará a una base de datos.
@@ -38,6 +56,10 @@ import {
 
 const ROLES = ["Presidente", "Tesorera", "Secretario", "Residente"];
 const MESA_DIRECTIVA = ["Presidente", "Tesorera", "Secretario"];
+const TODOS = ["Presidente", "Tesorera", "Secretario", "Residente"];
+const PUEDEN_VALIDAR = ["Presidente", "Tesorera"];
+const PUEDEN_AVISO_GENERAL = ["Presidente", "Secretario"];
+const DIAS_RECORDATORIO = 3;
 
 const initialResidentes = [
   { id: 1, nombre: "Ana Torres", email: "ana.torres@losrobles.mx", telefono: "442-100-0001", vivienda: "A-12", rol: "Presidente", password: "1234" },
@@ -46,18 +68,34 @@ const initialResidentes = [
   { id: 4, nombre: "Jorge Paredes", email: "jorge.paredes@losrobles.mx", telefono: "442-100-0004", vivienda: "A-05", rol: "Residente", password: "1234" },
 ];
 
+// Una cuota pagada guarda su recibo; una cuota con comprobante guarda el comprobante (HU-06)
+const reciboVentanilla = (id, fecha, por) => ({ folio: folioDe(id), fecha, validadoPor: por, via: "Ventanilla" });
+const folioDe = (id) => `R-${String(id).padStart(4, "0")}`;
+
 const initialCuotas = [
-  { id: 1, residenteId: 4, mes: "Agosto 2026", monto: 850, pagado: true },
-  { id: 2, residenteId: 4, mes: "Septiembre 2026", monto: 850, pagado: false },
-  { id: 3, residenteId: 2, mes: "Septiembre 2026", monto: 850, pagado: true },
+  { id: 1, residenteId: 4, mes: "Agosto 2026", monto: 850, vence: "2026-08-10", pagado: true, comprobante: null, recibo: reciboVentanilla(1, "2026-08-08", "Carlos Medina") },
+  { id: 2, residenteId: 4, mes: "Septiembre 2026", monto: 850, vence: "2026-09-10", pagado: false, comprobante: null, recibo: null },
+  { id: 3, residenteId: 2, mes: "Septiembre 2026", monto: 850, vence: "2026-09-10", pagado: true, comprobante: null, recibo: reciboVentanilla(3, "2026-09-09", "Ana Torres") },
+  { id: 4, residenteId: 3, mes: "Septiembre 2026", monto: 850, vence: "2026-09-10", pagado: false, comprobante: null, recibo: null },
+  { id: 5, residenteId: 4, mes: "Octubre 2026", monto: 850, vence: "2026-10-31", pagado: false, comprobante: null, recibo: null },
+];
+
+const initialAvisos = [
+  { id: 1, titulo: "Asamblea general de residentes", contenido: "Se convoca a asamblea el sábado 17 de octubre a las 10:00 h en el salón comunal para revisar el presupuesto anual.", urgente: false, autorId: 3, fechaHora: "2026-10-08T09:00:00" },
+  { id: 2, titulo: "Mantenimiento de áreas verdes", contenido: "El jardinero atenderá las áreas comunes del lunes al miércoles de la próxima semana.", urgente: false, autorId: 3, fechaHora: "2026-10-12T16:30:00" },
 ];
 
 const TABS = [
-  { id: "registro", label: "Registro de residentes", hu: "HU-01", icon: UserPlus },
-  { id: "roles", label: "Roles y permisos", hu: "HU-02", icon: ShieldCheck },
-  { id: "login", label: "Inicio de sesión", hu: "HU-03", icon: LogIn },
-  { id: "cuotas", label: "Cuotas y adeudos", hu: "HU-04", icon: Wallet },
-  { id: "estado", label: "Estado de cuenta", hu: "HU-05", icon: Receipt },
+  { id: "registro", label: "Registro de residentes", hu: "HU-01", sprint: 1, icon: UserPlus },
+  { id: "roles", label: "Roles y permisos", hu: "HU-02", sprint: 1, icon: ShieldCheck },
+  { id: "login", label: "Inicio de sesión", hu: "HU-03", sprint: 1, icon: LogIn },
+  { id: "cuotas", label: "Cuotas y adeudos", hu: "HU-04", sprint: 1, icon: Wallet },
+  { id: "estado", label: "Estado de cuenta", hu: "HU-05", sprint: 1, icon: Receipt },
+  { id: "pagos", label: "Pagos y comprobantes", hu: "HU-06", sprint: 2, icon: FileCheck2 },
+  { id: "adeudos", label: "Adeudos y notificaciones", hu: "HU-07", sprint: 2, icon: BellRing },
+  { id: "reportes", label: "Reportes de recaudación", hu: "HU-08", sprint: 2, icon: BarChart3 },
+  { id: "avisos", label: "Avisos y notificaciones", hu: "HU-09 · HU-10", sprint: 2, icon: Megaphone },
+  { id: "publicar", label: "Publicar avisos", hu: "HU-09 · HU-10", sprint: 2, icon: PenSquare },
 ];
 
 // Roles con acceso a cada sección (null = pública, sin necesidad de sesión)
@@ -66,7 +104,12 @@ const ACCESS = {
   login: null,
   roles: ["Presidente"],
   cuotas: ["Presidente", "Tesorera"],
-  estado: ["Presidente", "Tesorera", "Secretario", "Residente"],
+  estado: TODOS,
+  pagos: TODOS,
+  adeudos: ["Presidente", "Tesorera"],
+  reportes: MESA_DIRECTIVA,
+  avisos: TODOS,
+  publicar: MESA_DIRECTIVA,
 };
 
 function canAccess(tabId, user) {
@@ -76,6 +119,46 @@ function canAccess(tabId, user) {
 }
 
 const normalizeEmail = (value) => value.trim().toLowerCase();
+
+// ---------- Utilidades de fechas, dinero y estatus (Sprint 2) ----------
+const hoyLocal = () => {
+  const d = new Date();
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+};
+
+function sumarDias(iso, n) {
+  const d = new Date(`${iso}T12:00:00`);
+  d.setDate(d.getDate() + n);
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+}
+
+const fmtFecha = (iso) => (iso ? new Date(`${iso.slice(0, 10)}T12:00:00`).toLocaleDateString("es-MX", { day: "2-digit", month: "short", year: "numeric" }) : "—");
+const fmtFechaHora = (iso) =>
+  new Date(iso).toLocaleString("es-MX", { day: "2-digit", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit" });
+const ahoraISO = () => {
+  const d = new Date();
+  const p = (n) => String(n).padStart(2, "0");
+  return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())}T${p(d.getHours())}:${p(d.getMinutes())}:${p(d.getSeconds())}`;
+};
+const money = (n) => `$${n.toLocaleString("es-MX")}`;
+
+// Pagada | En validación | Vencida | Pendiente  (HU-06 / HU-07)
+function estatusCuota(c, hoy) {
+  if (c.pagado) return "Pagada";
+  if (c.comprobante?.estado === "En validación") return "En validación";
+  return c.vence < hoy ? "Vencida" : "Pendiente";
+}
+
+const ESTATUS_CLASE = {
+  Pagada: "text-emerald-800 bg-emerald-50 border-emerald-200",
+  "En validación": "text-sky-800 bg-sky-50 border-sky-200",
+  Vencida: "text-red-800 bg-red-50 border-red-200",
+  Pendiente: "text-amber-800 bg-amber-50 border-amber-200",
+};
+
+function EstatusBadge({ estatus }) {
+  return <span className={`inline-block text-xs px-2 py-0.5 rounded border ${ESTATUS_CLASE[estatus]}`}>{estatus}</span>;
+}
 
 function HuBadge({ children }) {
   return (
@@ -103,7 +186,7 @@ function AccesoRestringido({ tab, user }) {
     <div>
       <div className="flex items-center gap-2 mb-1">
         <h2 className="text-xl font-serif text-emerald-900">{tab.label}</h2>
-        <HuBadge>{tab.hu} · Sprint 1</HuBadge>
+        <HuBadge>{tab.hu} · Sprint {tab.sprint}</HuBadge>
       </div>
       <div className="max-w-md bg-white border border-stone-200 rounded p-5 mt-6">
         <div className="flex items-center gap-2 text-amber-800 mb-2">
@@ -398,20 +481,22 @@ function Login({ residentes, currentUser, onLogin, onLogout }) {
   );
 }
 
-function Cuotas({ residentes, cuotas, onAgregarCuota, onTogglePagado }) {
+function Cuotas({ residentes, cuotas, hoy, onAgregarCuota, onPagoVentanilla }) {
   const [residenteId, setResidenteId] = useState(residentes[0]?.id ?? "");
   const [mes, setMes] = useState("");
   const [monto, setMonto] = useState("850");
+  const [vence, setVence] = useState("");
   const [error, setError] = useState("");
 
   function handleSubmit(e) {
     e.preventDefault();
-    if (!residenteId || !mes.trim() || !monto) {
-      setError("Completa residente, mes y monto.");
+    if (!residenteId || !mes.trim() || !monto || !vence) {
+      setError("Completa residente, mes, monto y fecha límite de pago.");
       return;
     }
-    onAgregarCuota(Number(residenteId), mes.trim(), Number(monto));
+    onAgregarCuota(Number(residenteId), mes.trim(), Number(monto), vence);
     setMes("");
+    setVence("");
     setError("");
   }
 
@@ -427,7 +512,9 @@ function Cuotas({ residentes, cuotas, onAgregarCuota, onTogglePagado }) {
       </div>
       <p className="text-sm text-stone-600 mb-6">
         Como tesorera, quiero registrar las cuotas y adeudos de cada residente, para mantener
-        actualizado el control financiero del residencial.
+        actualizado el control financiero del residencial. Cada cuota lleva una fecha límite de
+        pago (ajuste A11); el pago de una cuota se confirma en “Pagos y comprobantes” o, si se
+        paga en ventanilla, con el botón de esta tabla (ajuste A13).
       </p>
 
       <form onSubmit={handleSubmit} className="max-w-md bg-white border border-stone-200 rounded p-5 mb-8">
@@ -444,6 +531,9 @@ function Cuotas({ residentes, cuotas, onAgregarCuota, onTogglePagado }) {
         <Field label="Monto (MXN)">
           <input type="number" className={inputClass} value={monto} onChange={(e) => setMonto(e.target.value)} />
         </Field>
+        <Field label="Fecha límite de pago">
+          <input type="date" className={inputClass} value={vence} onChange={(e) => setVence(e.target.value)} />
+        </Field>
         {error && <p className="text-sm text-red-700 mb-3">{error}</p>}
         <button type="submit" className="bg-emerald-800 hover:bg-emerald-900 text-white text-sm font-medium px-4 py-2 rounded">
           Registrar cuota
@@ -458,30 +548,36 @@ function Cuotas({ residentes, cuotas, onAgregarCuota, onTogglePagado }) {
               <th className="py-2 pr-4">Residente</th>
               <th className="py-2 pr-4">Mes</th>
               <th className="py-2 pr-4">Monto</th>
+              <th className="py-2 pr-4">Fecha límite</th>
               <th className="py-2 pr-4">Estatus</th>
+              <th className="py-2 pr-4">Pago en ventanilla</th>
             </tr>
           </thead>
           <tbody>
-            {cuotas.map((c) => (
-              <tr key={c.id} className="border-b border-stone-100">
-                <td className="py-2 pr-4 text-stone-800">{nombreResidente(c.residenteId)}</td>
-                <td className="py-2 pr-4 text-stone-600">{c.mes}</td>
-                <td className="py-2 pr-4 text-stone-600">${c.monto.toLocaleString("es-MX")}</td>
-                <td className="py-2 pr-4">
-                  <button
-                    onClick={() => onTogglePagado(c.id)}
-                    className={`flex items-center gap-1 text-xs px-2 py-1 rounded border ${
-                      c.pagado
-                        ? "text-emerald-800 bg-emerald-50 border-emerald-200"
-                        : "text-amber-800 bg-amber-50 border-amber-200"
-                    }`}
-                  >
-                    {c.pagado ? <CheckCircle2 size={14} /> : <Circle size={14} />}
-                    {c.pagado ? "Pagado" : "Pendiente"}
-                  </button>
-                </td>
-              </tr>
-            ))}
+            {cuotas.map((c) => {
+              const estatus = estatusCuota(c, hoy);
+              return (
+                <tr key={c.id} className="border-b border-stone-100">
+                  <td className="py-2 pr-4 text-stone-800">{nombreResidente(c.residenteId)}</td>
+                  <td className="py-2 pr-4 text-stone-600">{c.mes}</td>
+                  <td className="py-2 pr-4 text-stone-600">{money(c.monto)}</td>
+                  <td className="py-2 pr-4 text-stone-600">{fmtFecha(c.vence)}</td>
+                  <td className="py-2 pr-4"><EstatusBadge estatus={estatus} /></td>
+                  <td className="py-2 pr-4">
+                    {c.pagado ? (
+                      <span className="text-xs text-stone-500">Recibo {c.recibo?.folio}</span>
+                    ) : (
+                      <button
+                        onClick={() => onPagoVentanilla(c.id)}
+                        className="flex items-center gap-1 text-xs px-2 py-1 rounded border border-stone-300 text-stone-700 hover:bg-stone-100"
+                      >
+                        <Circle size={14} /> Registrar pago
+                      </button>
+                    )}
+                  </td>
+                </tr>
+              );
+            })}
           </tbody>
         </table>
       </div>
@@ -489,7 +585,7 @@ function Cuotas({ residentes, cuotas, onAgregarCuota, onTogglePagado }) {
   );
 }
 
-function EstadoCuenta({ residentes, cuotas, currentUser }) {
+function EstadoCuenta({ residentes, cuotas, currentUser, hoy }) {
   // Mesa directiva puede consultar a cualquier residente; un residente solo su propia cuenta (A9)
   const esMesa = MESA_DIRECTIVA.includes(currentUser.rol);
   const [seleccion, setSeleccion] = useState(currentUser.id);
@@ -530,11 +626,11 @@ function EstadoCuenta({ residentes, cuotas, currentUser }) {
       <div className="grid grid-cols-2 gap-4 max-w-md mb-8">
         <div className="bg-white border border-stone-200 rounded p-4">
           <p className="text-xs text-stone-500 uppercase tracking-wide mb-1">Total pagado</p>
-          <p className="text-2xl font-serif text-emerald-800">${totalPagado.toLocaleString("es-MX")}</p>
+          <p className="text-2xl font-serif text-emerald-800">{money(totalPagado)}</p>
         </div>
         <div className="bg-white border border-stone-200 rounded p-4">
           <p className="text-xs text-stone-500 uppercase tracking-wide mb-1">Adeudo pendiente</p>
-          <p className="text-2xl font-serif text-amber-700">${totalAdeudo.toLocaleString("es-MX")}</p>
+          <p className="text-2xl font-serif text-amber-700">{money(totalAdeudo)}</p>
         </div>
       </div>
 
@@ -547,18 +643,22 @@ function EstadoCuenta({ residentes, cuotas, currentUser }) {
             <tr className="text-left text-stone-500 border-b border-stone-300">
               <th className="py-2 pr-4">Mes</th>
               <th className="py-2 pr-4">Monto</th>
+              <th className="py-2 pr-4">Fecha límite</th>
               <th className="py-2 pr-4">Estatus</th>
+              <th className="py-2 pr-4">Recibo</th>
             </tr>
           </thead>
           <tbody>
             {cuotasResidente.length === 0 && (
-              <tr><td colSpan={3} className="py-3 text-stone-500">Sin movimientos registrados.</td></tr>
+              <tr><td colSpan={5} className="py-3 text-stone-500">Sin movimientos registrados.</td></tr>
             )}
             {cuotasResidente.map((c) => (
               <tr key={c.id} className="border-b border-stone-100">
                 <td className="py-2 pr-4 text-stone-800">{c.mes}</td>
-                <td className="py-2 pr-4 text-stone-600">${c.monto.toLocaleString("es-MX")}</td>
-                <td className="py-2 pr-4 text-stone-600">{c.pagado ? "Pagado" : "Pendiente"}</td>
+                <td className="py-2 pr-4 text-stone-600">{money(c.monto)}</td>
+                <td className="py-2 pr-4 text-stone-600">{fmtFecha(c.vence)}</td>
+                <td className="py-2 pr-4"><EstatusBadge estatus={estatusCuota(c, hoy)} /></td>
+                <td className="py-2 pr-4 text-stone-600">{c.recibo?.folio ?? "—"}</td>
               </tr>
             ))}
           </tbody>
@@ -568,15 +668,683 @@ function EstadoCuenta({ residentes, cuotas, currentUser }) {
   );
 }
 
-export default function App() {
+// =====================================================================
+// SPRINT 2
+// =====================================================================
+
+function EncabezadoHU({ tabId, titulo, historia }) {
+  const tab = TABS.find((t) => t.id === tabId);
+  return (
+    <>
+      <div className="flex items-center gap-2 mb-1">
+        <h2 className="text-xl font-serif text-emerald-900">{titulo}</h2>
+        <HuBadge>{tab.hu} · Sprint {tab.sprint}</HuBadge>
+      </div>
+      <p className="text-sm text-stone-600 mb-6">{historia}</p>
+    </>
+  );
+}
+
+const subtitulo = "text-sm font-medium text-stone-500 uppercase tracking-wide mb-2";
+const thClass = "py-2 pr-4";
+
+// ---------- HU-06 · Validación de pagos ----------
+function Pagos({ residentes, cuotas, hoy, currentUser, onEnviarComprobante, onValidar, onRechazar }) {
+  const puedeValidar = PUEDEN_VALIDAR.includes(currentUser.rol);
+  const mias = cuotas.filter((c) => c.residenteId === currentUser.id);
+  const pagables = mias.filter((c) => !c.pagado && c.comprobante?.estado !== "En validación");
+  const porValidar = cuotas.filter((c) => c.comprobante?.estado === "En validación");
+
+  const [cuotaId, setCuotaId] = useState("");
+  const [metodo, setMetodo] = useState("Transferencia");
+  const [referencia, setReferencia] = useState("");
+  const [archivo, setArchivo] = useState(null);
+  const [inputKey, setInputKey] = useState(0);
+  const [error, setError] = useState("");
+  const [ok, setOk] = useState("");
+  const [motivos, setMotivos] = useState({});
+  const [msgValidacion, setMsgValidacion] = useState({ tipo: "", texto: "" });
+
+  const idSel = pagables.some((c) => c.id === Number(cuotaId)) ? Number(cuotaId) : pagables[0]?.id ?? "";
+  const nombre = (id) => residentes.find((r) => r.id === id)?.nombre ?? "—";
+
+  function handleSubmit(e) {
+    e.preventDefault();
+    setOk("");
+    if (!idSel) {
+      setError("No tienes cuotas por pagar.");
+      return;
+    }
+    if (!archivo) {
+      setError("Adjunta el comprobante de pago.");
+      return;
+    }
+    // A12: solo imagen o PDF
+    if (!(archivo.type.startsWith("image/") || archivo.type === "application/pdf")) {
+      setError("El comprobante debe ser una imagen o un PDF.");
+      return;
+    }
+    const cuota = cuotas.find((c) => c.id === idSel);
+    onEnviarComprobante(idSel, { archivo: archivo.name, tipo: archivo.type, tam: archivo.size, metodo, referencia: referencia.trim() });
+    setError("");
+    setOk(`Comprobante de ${cuota.mes} enviado. La cuota queda “En validación” hasta que la tesorería lo revise.`);
+    setArchivo(null);
+    setReferencia("");
+    setInputKey((k) => k + 1);
+  }
+
+  function validar(c) {
+    onValidar(c.id);
+    setMsgValidacion({ tipo: "ok", texto: `Pago validado: ${nombre(c.residenteId)} · ${c.mes}. Se emitió el recibo ${folioDe(c.id)}.` });
+  }
+
+  function rechazar(c) {
+    const motivo = (motivos[c.id] ?? "").trim();
+    if (!motivo) {
+      setMsgValidacion({ tipo: "error", texto: "Escribe el motivo del rechazo." });
+      return;
+    }
+    onRechazar(c.id, motivo);
+    setMsgValidacion({ tipo: "ok", texto: `Comprobante rechazado: ${nombre(c.residenteId)} · ${c.mes}. El residente podrá enviar uno nuevo.` });
+  }
+
+  return (
+    <div>
+      <EncabezadoHU
+        tabId="pagos"
+        titulo="Pagos y comprobantes"
+        historia="Como residente, quiero registrar y validar mis pagos dentro de la plataforma, para obtener comprobante inmediato de mis aportaciones."
+      />
+
+      <form onSubmit={handleSubmit} className="max-w-md bg-white border border-stone-200 rounded p-5 mb-8">
+        <h3 className="text-sm font-medium text-stone-700 mb-3">Registrar un pago</h3>
+        {pagables.length === 0 ? (
+          <p className="text-sm text-stone-600">No tienes cuotas por pagar. ¡Estás al corriente!</p>
+        ) : (
+          <>
+            <Field label="Cuota a pagar">
+              <select className={inputClass} value={idSel} onChange={(e) => setCuotaId(e.target.value)} aria-label="Cuota a pagar">
+                {pagables.map((c) => (
+                  <option key={c.id} value={c.id}>{c.mes} · {money(c.monto)} · {estatusCuota(c, hoy)}</option>
+                ))}
+              </select>
+            </Field>
+            <Field label="Método de pago">
+              <select className={inputClass} value={metodo} onChange={(e) => setMetodo(e.target.value)} aria-label="Método de pago">
+                <option>Transferencia</option>
+                <option>Depósito bancario</option>
+              </select>
+            </Field>
+            <Field label="Referencia o folio (opcional)">
+              <input className={inputClass} value={referencia} onChange={(e) => setReferencia(e.target.value)} placeholder="Ej. 0048213" />
+            </Field>
+            <Field label="Comprobante (imagen o PDF)">
+              <input
+                key={inputKey}
+                type="file"
+                accept="image/*,application/pdf"
+                aria-label="Comprobante de pago"
+                className="block w-full text-sm text-stone-600"
+                onChange={(e) => setArchivo(e.target.files?.[0] ?? null)}
+              />
+            </Field>
+            {error && <p className="text-sm text-red-700 mb-3">{error}</p>}
+            {ok && (
+              <p className="flex items-start gap-2 text-sm text-emerald-700 mb-3">
+                <CheckCircle2 size={16} className="mt-0.5 shrink-0" /> {ok}
+              </p>
+            )}
+            <button type="submit" className="bg-emerald-800 hover:bg-emerald-900 text-white text-sm font-medium px-4 py-2 rounded">
+              Enviar comprobante
+            </button>
+          </>
+        )}
+        {pagables.length === 0 && ok && (
+          <p className="flex items-start gap-2 text-sm text-emerald-700 mt-3">
+            <CheckCircle2 size={16} className="mt-0.5 shrink-0" /> {ok}
+          </p>
+        )}
+      </form>
+
+      <h3 className={subtitulo}>Mis cuotas y comprobantes</h3>
+      <div className="overflow-x-auto mb-8">
+        <table className="w-full text-sm">
+          <thead>
+            <tr className="text-left text-stone-500 border-b border-stone-300">
+              <th className={thClass}>Mes</th>
+              <th className={thClass}>Monto</th>
+              <th className={thClass}>Estatus</th>
+              <th className={thClass}>Comprobante</th>
+              <th className={thClass}>Recibo</th>
+            </tr>
+          </thead>
+          <tbody>
+            {mias.length === 0 && (
+              <tr><td colSpan={5} className="py-3 text-stone-500">Sin cuotas registradas.</td></tr>
+            )}
+            {mias.map((c) => (
+              <tr key={c.id} className="border-b border-stone-100">
+                <td className="py-2 pr-4 text-stone-800">{c.mes}</td>
+                <td className="py-2 pr-4 text-stone-600">{money(c.monto)}</td>
+                <td className="py-2 pr-4"><EstatusBadge estatus={estatusCuota(c, hoy)} /></td>
+                <td className="py-2 pr-4 text-stone-600">
+                  {c.comprobante ? (
+                    <>
+                      {c.comprobante.archivo} · {c.comprobante.estado}
+                      {c.comprobante.estado === "Rechazado" && <span className="block text-xs text-red-700">Motivo: {c.comprobante.motivo}</span>}
+                    </>
+                  ) : "—"}
+                </td>
+                <td className="py-2 pr-4 text-stone-600">
+                  {c.recibo ? (
+                    <span className="inline-flex items-center gap-1 text-emerald-800"><CheckCircle2 size={14} /> {c.recibo.folio}</span>
+                  ) : "—"}
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+
+      {puedeValidar && (
+        <section>
+          <h3 className={subtitulo}>Comprobantes por validar ({porValidar.length})</h3>
+          {msgValidacion.texto && (
+            <p className={`text-sm mb-3 ${msgValidacion.tipo === "ok" ? "text-emerald-700" : "text-red-700"}`}>{msgValidacion.texto}</p>
+          )}
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="text-left text-stone-500 border-b border-stone-300">
+                  <th className={thClass}>Residente</th>
+                  <th className={thClass}>Mes</th>
+                  <th className={thClass}>Monto</th>
+                  <th className={thClass}>Comprobante</th>
+                  <th className={thClass}>Acción</th>
+                </tr>
+              </thead>
+              <tbody>
+                {porValidar.length === 0 && (
+                  <tr><td colSpan={5} className="py-3 text-stone-500">No hay comprobantes pendientes.</td></tr>
+                )}
+                {porValidar.map((c) => {
+                  const propio = c.residenteId === currentUser.id;
+                  return (
+                    <tr key={c.id} className="border-b border-stone-100 align-top">
+                      <td className="py-2 pr-4 text-stone-800">{nombre(c.residenteId)}</td>
+                      <td className="py-2 pr-4 text-stone-600">{c.mes}</td>
+                      <td className="py-2 pr-4 text-stone-600">{money(c.monto)}</td>
+                      <td className="py-2 pr-4 text-stone-600">
+                        {c.comprobante.archivo}
+                        <span className="block text-xs text-stone-500">
+                          {c.comprobante.metodo}{c.comprobante.referencia ? ` · ref. ${c.comprobante.referencia}` : ""}
+                        </span>
+                      </td>
+                      <td className="py-2 pr-4">
+                        {propio ? (
+                          <span className="text-xs text-amber-800">No puedes validar tu propio pago; lo revisa otro miembro.</span>
+                        ) : (
+                          <div className="flex flex-col gap-2">
+                            <button
+                              onClick={() => validar(c)}
+                              aria-label={`Validar pago de ${nombre(c.residenteId)} ${c.mes}`}
+                              className="self-start text-xs px-2 py-1 rounded bg-emerald-800 text-white hover:bg-emerald-900"
+                            >
+                              Validar pago
+                            </button>
+                            <div className="flex gap-1">
+                              <input
+                                className="border border-stone-300 rounded px-2 py-1 text-xs w-36"
+                                placeholder="Motivo de rechazo"
+                                aria-label={`Motivo de rechazo ${nombre(c.residenteId)} ${c.mes}`}
+                                value={motivos[c.id] ?? ""}
+                                onChange={(e) => setMotivos({ ...motivos, [c.id]: e.target.value })}
+                              />
+                              <button
+                                onClick={() => rechazar(c)}
+                                aria-label={`Rechazar pago de ${nombre(c.residenteId)} ${c.mes}`}
+                                className="text-xs px-2 py-1 rounded border border-red-300 text-red-800 hover:bg-red-50"
+                              >
+                                Rechazar
+                              </button>
+                            </div>
+                          </div>
+                        )}
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+        </section>
+      )}
+    </div>
+  );
+}
+
+// ---------- HU-07 · Notificaciones de adeudo ----------
+function Adeudos({ residentes, cuotas, notificaciones, hoy, onGenerar }) {
+  const [msg, setMsg] = useState("");
+  const limite = sumarDias(hoy, DIAS_RECORDATORIO);
+  const vencidas = cuotas.filter((c) => estatusCuota(c, hoy) === "Vencida");
+  const porVencer = cuotas.filter((c) => estatusCuota(c, hoy) === "Pendiente" && c.vence <= limite);
+
+  const morosos = residentes
+    .map((r) => {
+      const cs = vencidas.filter((c) => c.residenteId === r.id);
+      return { residente: r, cuotas: cs, total: cs.reduce((s, c) => s + c.monto, 0) };
+    })
+    .filter((m) => m.cuotas.length > 0);
+  const totalVencido = morosos.reduce((s, m) => s + m.total, 0);
+  const notificadoHoy = (residenteId) => notificaciones.some((n) => n.residenteId === residenteId && n.fecha === hoy && n.tipo === "Vencida");
+  const nombre = (id) => residentes.find((r) => r.id === id)?.nombre ?? "—";
+
+  function generar() {
+    const n = onGenerar();
+    setMsg(
+      n > 0
+        ? `Se generaron ${n} ${n === 1 ? "notificación" : "notificaciones"} de adeudo.`
+        : "No hay cuotas vencidas ni próximas a vencer sin notificar hoy."
+    );
+  }
+
+  return (
+    <div>
+      <EncabezadoHU
+        tabId="adeudos"
+        titulo="Adeudos y notificaciones"
+        historia="Como tesorera, quiero que el sistema genere notificaciones automáticas de adeudo, para recordar a los residentes morosos sus pagos pendientes."
+      />
+
+      <div className="grid grid-cols-3 gap-4 max-w-2xl mb-6">
+        <div className="bg-white border border-stone-200 rounded p-4">
+          <p className="text-xs text-stone-500 uppercase tracking-wide mb-1">Residentes morosos</p>
+          <p className="text-2xl font-serif text-red-700">{morosos.length}</p>
+        </div>
+        <div className="bg-white border border-stone-200 rounded p-4">
+          <p className="text-xs text-stone-500 uppercase tracking-wide mb-1">Adeudo vencido</p>
+          <p className="text-2xl font-serif text-red-700">{money(totalVencido)}</p>
+        </div>
+        <div className="bg-white border border-stone-200 rounded p-4">
+          <p className="text-xs text-stone-500 uppercase tracking-wide mb-1">Vencen en {DIAS_RECORDATORIO} días</p>
+          <p className="text-2xl font-serif text-amber-700">{porVencer.length}</p>
+        </div>
+      </div>
+
+      <div className="mb-8">
+        <button onClick={generar} className="bg-emerald-800 hover:bg-emerald-900 text-white text-sm font-medium px-4 py-2 rounded">
+          Generar notificaciones de adeudo
+        </button>
+        {msg && <p className="text-sm text-emerald-700 mt-2">{msg}</p>}
+        <p className="text-xs text-stone-500 mt-2">
+          Cuotas vencidas (fecha límite anterior a hoy) generan un aviso de adeudo; las que vencen en los próximos {DIAS_RECORDATORIO} días
+          generan un recordatorio (ajuste A15). Una cuota no se notifica dos veces el mismo día.
+        </p>
+      </div>
+
+      <h3 className={subtitulo}>Residentes con adeudo vencido</h3>
+      <div className="overflow-x-auto mb-8">
+        <table className="w-full text-sm">
+          <thead>
+            <tr className="text-left text-stone-500 border-b border-stone-300">
+              <th className={thClass}>Residente</th>
+              <th className={thClass}>Vivienda</th>
+              <th className={thClass}>Cuotas vencidas</th>
+              <th className={thClass}>Adeudo</th>
+              <th className={thClass}>Notificado hoy</th>
+            </tr>
+          </thead>
+          <tbody>
+            {morosos.length === 0 && (
+              <tr><td colSpan={5} className="py-3 text-stone-500">No hay residentes con adeudo vencido.</td></tr>
+            )}
+            {morosos.map((m) => (
+              <tr key={m.residente.id} className="border-b border-stone-100">
+                <td className="py-2 pr-4 text-stone-800">{m.residente.nombre}</td>
+                <td className="py-2 pr-4 text-stone-600">{m.residente.vivienda}</td>
+                <td className="py-2 pr-4 text-stone-600">{m.cuotas.map((c) => c.mes).join(", ")}</td>
+                <td className="py-2 pr-4 text-stone-600">{money(m.total)}</td>
+                <td className="py-2 pr-4 text-stone-600">{notificadoHoy(m.residente.id) ? "Sí" : "No"}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+
+      <h3 className={subtitulo}>Notificaciones generadas ({notificaciones.length})</h3>
+      <div className="overflow-x-auto">
+        <table className="w-full text-sm">
+          <thead>
+            <tr className="text-left text-stone-500 border-b border-stone-300">
+              <th className={thClass}>Fecha</th>
+              <th className={thClass}>Residente</th>
+              <th className={thClass}>Tipo</th>
+              <th className={thClass}>Mensaje</th>
+            </tr>
+          </thead>
+          <tbody>
+            {notificaciones.length === 0 && (
+              <tr><td colSpan={4} className="py-3 text-stone-500">Aún no se generan notificaciones.</td></tr>
+            )}
+            {notificaciones.map((n) => (
+              <tr key={n.id} className="border-b border-stone-100 align-top">
+                <td className="py-2 pr-4 text-stone-600">{fmtFecha(n.fecha)}</td>
+                <td className="py-2 pr-4 text-stone-800">{nombre(n.residenteId)}</td>
+                <td className="py-2 pr-4 text-stone-600">{n.tipo}</td>
+                <td className="py-2 pr-4 text-stone-600">{n.mensaje}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  );
+}
+
+// ---------- HU-08 · Reportes de recaudación ----------
+function descargarCSV(nombreArchivo, texto) {
+  try {
+    const blob = new Blob(["﻿" + texto], { type: "text/csv;charset=utf-8" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = nombreArchivo;
+    a.click();
+    URL.revokeObjectURL(url);
+  } catch {
+    /* entornos sin soporte de descarga */
+  }
+}
+
+function Reportes({ residentes, cuotas, hoy }) {
+  const periodos = [...new Set(cuotas.map((c) => c.mes))];
+  const [periodo, setPeriodo] = useState("Todos");
+  const filas = cuotas.filter((c) => periodo === "Todos" || c.mes === periodo);
+
+  const esperado = filas.reduce((s, c) => s + c.monto, 0);
+  const recaudado = filas.filter((c) => c.pagado).reduce((s, c) => s + c.monto, 0);
+  const pendiente = esperado - recaudado;
+  const porcentaje = esperado ? Math.round((recaudado / esperado) * 100) : 0;
+
+  const desglose = residentes
+    .map((r) => {
+      const cs = filas.filter((c) => c.residenteId === r.id);
+      const esp = cs.reduce((s, c) => s + c.monto, 0);
+      const rec = cs.filter((c) => c.pagado).reduce((s, c) => s + c.monto, 0);
+      return { residente: r, cuotas: cs.length, esperado: esp, recaudado: rec, pendiente: esp - rec };
+    })
+    .filter((d) => d.cuotas > 0)
+    .sort((a, b) => a.residente.vivienda.localeCompare(b.residente.vivienda));
+
+  function exportarCSV() {
+    const lineas = ["Vivienda,Residente,Cuotas,Esperado,Recaudado,Pendiente"];
+    desglose.forEach((d) =>
+      lineas.push([d.residente.vivienda, `"${d.residente.nombre}"`, d.cuotas, d.esperado, d.recaudado, d.pendiente].join(","))
+    );
+    lineas.push(["TOTAL", "", filas.length, esperado, recaudado, pendiente].join(","));
+    descargarCSV(`reporte-recaudacion-${periodo.replace(/\s+/g, "-").toLowerCase()}.csv`, lineas.join("\n"));
+  }
+
+  return (
+    <div>
+      <EncabezadoHU
+        tabId="reportes"
+        titulo="Reportes de recaudación"
+        historia="Como mesa directiva, quiero generar reportes de recaudación e historial de pagos, para tomar decisiones financieras informadas."
+      />
+
+      <div className="flex flex-wrap items-end gap-3 mb-6 print:hidden">
+        <div className="w-56">
+          <Field label="Periodo">
+            <select className={inputClass} value={periodo} onChange={(e) => setPeriodo(e.target.value)} aria-label="Periodo del reporte">
+              <option value="Todos">Todos los periodos</option>
+              {periodos.map((p) => (
+                <option key={p} value={p}>{p}</option>
+              ))}
+            </select>
+          </Field>
+        </div>
+        <button onClick={exportarCSV} className="flex items-center gap-2 text-sm border border-stone-300 rounded px-4 py-2 mb-3 hover:bg-stone-100">
+          <Download size={16} /> Exportar CSV
+        </button>
+        <button onClick={() => window.print()} className="flex items-center gap-2 text-sm border border-stone-300 rounded px-4 py-2 mb-3 hover:bg-stone-100">
+          <Printer size={16} /> Imprimir / guardar PDF
+        </button>
+      </div>
+
+      <p className="text-sm text-stone-600 mb-4">
+        Reporte de recaudación · Periodo: <span className="font-medium text-stone-800">{periodo === "Todos" ? "Todos los periodos" : periodo}</span> · Emitido el {fmtFecha(hoy)}
+      </p>
+
+      <div className="grid grid-cols-4 gap-4 max-w-2xl mb-8">
+        <div className="bg-white border border-stone-200 rounded p-4">
+          <p className="text-xs text-stone-500 uppercase tracking-wide mb-1">Esperado</p>
+          <p className="text-xl font-serif text-stone-800" data-testid="rep-esperado">{money(esperado)}</p>
+        </div>
+        <div className="bg-white border border-stone-200 rounded p-4">
+          <p className="text-xs text-stone-500 uppercase tracking-wide mb-1">Recaudado</p>
+          <p className="text-xl font-serif text-emerald-800" data-testid="rep-recaudado">{money(recaudado)}</p>
+        </div>
+        <div className="bg-white border border-stone-200 rounded p-4">
+          <p className="text-xs text-stone-500 uppercase tracking-wide mb-1">Pendiente</p>
+          <p className="text-xl font-serif text-amber-700" data-testid="rep-pendiente">{money(pendiente)}</p>
+        </div>
+        <div className="bg-white border border-stone-200 rounded p-4">
+          <p className="text-xs text-stone-500 uppercase tracking-wide mb-1">Recaudación</p>
+          <p className="text-xl font-serif text-stone-800" data-testid="rep-porcentaje">{porcentaje} %</p>
+        </div>
+      </div>
+
+      <h3 className={subtitulo}>Desglose por vivienda</h3>
+      <div className="overflow-x-auto">
+        <table className="w-full text-sm">
+          <thead>
+            <tr className="text-left text-stone-500 border-b border-stone-300">
+              <th className={thClass}>Vivienda</th>
+              <th className={thClass}>Residente</th>
+              <th className={thClass}>Cuotas</th>
+              <th className={thClass}>Esperado</th>
+              <th className={thClass}>Recaudado</th>
+              <th className={thClass}>Pendiente</th>
+            </tr>
+          </thead>
+          <tbody>
+            {desglose.length === 0 && (
+              <tr><td colSpan={6} className="py-3 text-stone-500">Sin cuotas en este periodo.</td></tr>
+            )}
+            {desglose.map((d) => (
+              <tr key={d.residente.id} className="border-b border-stone-100">
+                <td className="py-2 pr-4 text-stone-800">{d.residente.vivienda}</td>
+                <td className="py-2 pr-4 text-stone-600">{d.residente.nombre}</td>
+                <td className="py-2 pr-4 text-stone-600">{d.cuotas}</td>
+                <td className="py-2 pr-4 text-stone-600">{money(d.esperado)}</td>
+                <td className="py-2 pr-4 text-stone-600">{money(d.recaudado)}</td>
+                <td className="py-2 pr-4 text-stone-600">{money(d.pendiente)}</td>
+              </tr>
+            ))}
+            {desglose.length > 0 && (
+              <tr className="font-medium text-stone-800">
+                <td className="py-2 pr-4" colSpan={2}>Total</td>
+                <td className="py-2 pr-4">{filas.length}</td>
+                <td className="py-2 pr-4">{money(esperado)}</td>
+                <td className="py-2 pr-4">{money(recaudado)}</td>
+                <td className="py-2 pr-4">{money(pendiente)}</td>
+              </tr>
+            )}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  );
+}
+
+// ---------- HU-09 / HU-10 · Avisos generales y notificaciones urgentes ----------
+function TarjetaAviso({ aviso, autor }) {
+  return (
+    <article
+      className={`rounded border p-4 mb-3 ${aviso.urgente ? "bg-red-50 border-red-300" : "bg-white border-stone-200"}`}
+    >
+      <div className="flex items-center gap-2 mb-1">
+        {aviso.urgente && <AlertTriangle size={16} className="text-red-700" />}
+        <h4 className={`font-medium ${aviso.urgente ? "text-red-800" : "text-stone-800"}`}>{aviso.titulo}</h4>
+        {aviso.urgente && <span className="text-xs font-medium text-red-800 border border-red-300 rounded px-1.5">URGENTE</span>}
+      </div>
+      <p className="text-sm text-stone-700 mb-2">{aviso.contenido}</p>
+      <p className="text-xs text-stone-500 flex items-center gap-1">
+        <Clock size={12} /> {fmtFechaHora(aviso.fechaHora)} · {autor}
+      </p>
+    </article>
+  );
+}
+
+function Avisos({ avisos, residentes, notificaciones, currentUser }) {
+  const ordenados = [...avisos].sort((a, b) => b.fechaHora.localeCompare(a.fechaHora)); // más reciente primero
+  const urgentes = ordenados.filter((a) => a.urgente);
+  const generales = ordenados.filter((a) => !a.urgente);
+  const mias = notificaciones.filter((n) => n.residenteId === currentUser.id).sort((a, b) => b.id - a.id);
+  const autor = (id) => residentes.find((r) => r.id === id)?.nombre ?? "—";
+
+  return (
+    <div>
+      <EncabezadoHU
+        tabId="avisos"
+        titulo="Avisos y notificaciones"
+        historia="Como residente, quiero ver los avisos generales y las notificaciones urgentes de la mesa directiva, además de mis notificaciones de adeudo."
+      />
+
+      {mias.length > 0 && (
+        <section className="mb-8">
+          <h3 className={subtitulo}>Mis notificaciones de adeudo ({mias.length})</h3>
+          {mias.map((n) => (
+            <div key={n.id} className="rounded border border-amber-200 bg-amber-50 p-3 mb-2 text-sm text-amber-900">
+              <span className="font-medium">{n.tipo === "Vencida" ? "Adeudo vencido" : "Recordatorio"} · {fmtFecha(n.fecha)}.</span> {n.mensaje}
+            </div>
+          ))}
+        </section>
+      )}
+
+      <section className="mb-8">
+        <h3 className={subtitulo}>Notificaciones urgentes ({urgentes.length})</h3>
+        {urgentes.length === 0 && <p className="text-sm text-stone-500">No hay notificaciones urgentes.</p>}
+        {urgentes.map((a) => (
+          <TarjetaAviso key={a.id} aviso={a} autor={autor(a.autorId)} />
+        ))}
+      </section>
+
+      <section>
+        <h3 className={subtitulo}>Avisos generales ({generales.length})</h3>
+        {generales.length === 0 && <p className="text-sm text-stone-500">No hay avisos publicados.</p>}
+        {generales.map((a) => (
+          <TarjetaAviso key={a.id} aviso={a} autor={autor(a.autorId)} />
+        ))}
+      </section>
+    </div>
+  );
+}
+
+function PublicarAvisos({ avisos, residentes, currentUser, onPublicar }) {
+  const puedeGeneral = PUEDEN_AVISO_GENERAL.includes(currentUser.rol);
+  const [tipo, setTipo] = useState(puedeGeneral ? "general" : "urgente");
+  const [titulo, setTitulo] = useState("");
+  const [contenido, setContenido] = useState("");
+  const [error, setError] = useState("");
+  const [ok, setOk] = useState("");
+  const tipoActivo = puedeGeneral ? tipo : "urgente";
+  const historial = [...avisos].sort((a, b) => b.fechaHora.localeCompare(a.fechaHora));
+  const autor = (id) => residentes.find((r) => r.id === id)?.nombre ?? "—";
+
+  function handleSubmit(e) {
+    e.preventDefault();
+    if (!titulo.trim() || !contenido.trim()) {
+      setError("Escribe el título y el contenido del aviso.");
+      setOk("");
+      return;
+    }
+    const aviso = onPublicar({ titulo: titulo.trim(), contenido: contenido.trim(), urgente: tipoActivo === "urgente" });
+    setTitulo("");
+    setContenido("");
+    setError("");
+    setOk(
+      aviso.urgente
+        ? `Notificación urgente publicada el ${fmtFechaHora(aviso.fechaHora)} · ya la ven los residentes.`
+        : `Aviso general publicado el ${fmtFechaHora(aviso.fechaHora)} · ya lo ven los residentes.`
+    );
+  }
+
+  return (
+    <div>
+      <EncabezadoHU
+        tabId="publicar"
+        titulo="Publicar avisos"
+        historia="Como secretario, quiero publicar avisos generales; como mesa directiva, quiero enviar notificaciones urgentes (corte de agua, luz, fumigación) para que los residentes estén al tanto."
+      />
+
+      <form onSubmit={handleSubmit} className="max-w-md bg-white border border-stone-200 rounded p-5 mb-8">
+        <fieldset className="mb-3">
+          <legend className="text-sm text-stone-600 mb-1">Tipo de publicación</legend>
+          <label className={`flex items-center gap-2 text-sm mb-1 ${puedeGeneral ? "text-stone-800" : "text-stone-400"}`}>
+            <input type="radio" name="tipo" value="general" disabled={!puedeGeneral} checked={tipoActivo === "general"} onChange={() => setTipo("general")} />
+            Aviso general {!puedeGeneral && "(solo Secretario y Presidente)"}
+          </label>
+          <label className="flex items-center gap-2 text-sm text-stone-800">
+            <input type="radio" name="tipo" value="urgente" checked={tipoActivo === "urgente"} onChange={() => setTipo("urgente")} />
+            Notificación urgente
+          </label>
+        </fieldset>
+        <Field label="Título">
+          <input className={inputClass} value={titulo} onChange={(e) => setTitulo(e.target.value)} placeholder="Ej. Corte de agua programado" />
+        </Field>
+        <Field label="Contenido">
+          <textarea className={inputClass} rows={4} value={contenido} onChange={(e) => setContenido(e.target.value)} placeholder="Describe el aviso para los residentes" />
+        </Field>
+        {error && <p className="text-sm text-red-700 mb-3">{error}</p>}
+        {ok && <p className="text-sm text-emerald-700 mb-3">{ok}</p>}
+        <button type="submit" className="bg-emerald-800 hover:bg-emerald-900 text-white text-sm font-medium px-4 py-2 rounded">
+          Publicar
+        </button>
+      </form>
+
+      <h3 className={subtitulo}>Historial de publicaciones ({historial.length})</h3>
+      <div className="overflow-x-auto">
+        <table className="w-full text-sm">
+          <thead>
+            <tr className="text-left text-stone-500 border-b border-stone-300">
+              <th className={thClass}>Fecha y hora</th>
+              <th className={thClass}>Tipo</th>
+              <th className={thClass}>Título</th>
+              <th className={thClass}>Publicó</th>
+            </tr>
+          </thead>
+          <tbody>
+            {historial.map((a) => (
+              <tr key={a.id} className="border-b border-stone-100">
+                <td className="py-2 pr-4 text-stone-600">{fmtFechaHora(a.fechaHora)}</td>
+                <td className={`py-2 pr-4 ${a.urgente ? "text-red-700 font-medium" : "text-stone-600"}`}>{a.urgente ? "Urgente" : "General"}</td>
+                <td className="py-2 pr-4 text-stone-800">{a.titulo}</td>
+                <td className="py-2 pr-4 text-stone-600">{autor(a.autorId)}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  );
+}
+
+export default function App({ hoy: hoyProp } = {}) {
+  const hoy = hoyProp ?? hoyLocal();
   const [residentes, setResidentes] = useState(initialResidentes);
   const [cuotas, setCuotas] = useState(initialCuotas);
+  const [avisos, setAvisos] = useState(initialAvisos);
+  const [notificaciones, setNotificaciones] = useState([]);
   const [activeTab, setActiveTab] = useState("registro");
   const [currentUserId, setCurrentUserId] = useState(null);
 
   // A7: el usuario en sesión se deriva de la lista, así un cambio de rol se refleja de inmediato
   const currentUser = residentes.find((r) => r.id === currentUserId) ?? null;
   const tabActual = TABS.find((t) => t.id === activeTab);
+  const urgentes = avisos.filter((a) => a.urgente).sort((a, b) => b.fechaHora.localeCompare(a.fechaHora));
 
   function handleRegistrar(form) {
     setResidentes((prev) => [
@@ -597,15 +1365,98 @@ export default function App() {
     setResidentes((prev) => prev.map((r) => (r.id === id ? { ...r, rol } : r)));
   }
 
-  function handleAgregarCuota(residenteId, mes, monto) {
+  function handleAgregarCuota(residenteId, mes, monto, vence) {
     setCuotas((prev) => [
       ...prev,
-      { id: prev.length ? Math.max(...prev.map((c) => c.id)) + 1 : 1, residenteId, mes, monto, pagado: false },
+      { id: prev.length ? Math.max(...prev.map((c) => c.id)) + 1 : 1, residenteId, mes, monto, vence, pagado: false, comprobante: null, recibo: null },
     ]);
   }
 
-  function handleTogglePagado(id) {
-    setCuotas((prev) => prev.map((c) => (c.id === id ? { ...c, pagado: !c.pagado } : c)));
+  // A13: pago en ventanilla; solo Tesorera o Presidente, queda registrado quién lo recibió
+  function handlePagoVentanilla(id) {
+    if (!currentUser || !PUEDEN_VALIDAR.includes(currentUser.rol)) return;
+    setCuotas((prev) =>
+      prev.map((c) =>
+        c.id === id && !c.pagado
+          ? { ...c, pagado: true, recibo: { folio: folioDe(c.id), fecha: hoy, validadoPor: currentUser.nombre, via: "Ventanilla" } }
+          : c
+      )
+    );
+  }
+
+  // HU-06: el residente envía el comprobante; la cuota queda "En validación", no pagada
+  function handleEnviarComprobante(id, datos) {
+    setCuotas((prev) =>
+      prev.map((c) =>
+        c.id === id && c.residenteId === currentUserId && !c.pagado
+          ? { ...c, comprobante: { ...datos, enviado: ahoraISO(), estado: "En validación" } }
+          : c
+      )
+    );
+  }
+
+  // HU-06: solo al validar la cuota pasa a pagada y se emite el recibo; A14: no se valida el propio pago
+  function handleValidar(id) {
+    if (!currentUser || !PUEDEN_VALIDAR.includes(currentUser.rol)) return;
+    setCuotas((prev) =>
+      prev.map((c) => {
+        if (c.id !== id || c.pagado || c.comprobante?.estado !== "En validación") return c;
+        if (c.residenteId === currentUser.id) return c;
+        return {
+          ...c,
+          pagado: true,
+          comprobante: { ...c.comprobante, estado: "Validado" },
+          recibo: { folio: folioDe(c.id), fecha: hoy, validadoPor: currentUser.nombre, via: "Comprobante" },
+        };
+      })
+    );
+  }
+
+  function handleRechazar(id, motivo) {
+    if (!currentUser || !PUEDEN_VALIDAR.includes(currentUser.rol)) return;
+    setCuotas((prev) =>
+      prev.map((c) => {
+        if (c.id !== id || c.pagado || c.comprobante?.estado !== "En validación") return c;
+        if (c.residenteId === currentUser.id) return c;
+        return { ...c, comprobante: { ...c.comprobante, estado: "Rechazado", motivo } };
+      })
+    );
+  }
+
+  // HU-07: genera avisos de adeudo (vencidas) y recordatorios (vencen en 3 días), sin repetirlos el mismo día
+  function handleGenerarNotificaciones() {
+    const limite = sumarDias(hoy, DIAS_RECORDATORIO);
+    let siguienteId = notificaciones.length ? Math.max(...notificaciones.map((n) => n.id)) + 1 : 1;
+    const nuevas = [];
+    cuotas.forEach((c) => {
+      const estatus = estatusCuota(c, hoy);
+      let tipo = null;
+      if (estatus === "Vencida") tipo = "Vencida";
+      else if (estatus === "Pendiente" && c.vence <= limite) tipo = "Recordatorio";
+      if (!tipo) return;
+      if (notificaciones.some((n) => n.cuotaId === c.id && n.fecha === hoy && n.tipo === tipo)) return;
+      const mensaje =
+        tipo === "Vencida"
+          ? `Tu cuota de ${c.mes} (${money(c.monto)}) venció el ${fmtFecha(c.vence)}. Regístrala en “Pagos y comprobantes”.`
+          : `Tu cuota de ${c.mes} (${money(c.monto)}) vence el ${fmtFecha(c.vence)}. Evita el adeudo pagando a tiempo.`;
+      nuevas.push({ id: siguienteId++, residenteId: c.residenteId, cuotaId: c.id, tipo, fecha: hoy, mensaje });
+    });
+    if (nuevas.length) setNotificaciones((prev) => [...nuevas, ...prev]);
+    return nuevas.length;
+  }
+
+  // HU-09 / HU-10: aviso general (Secretario o Presidente) o notificación urgente (mesa directiva), con fecha y hora
+  function handlePublicar({ titulo, contenido, urgente }) {
+    const aviso = {
+      id: avisos.length ? Math.max(...avisos.map((a) => a.id)) + 1 : 1,
+      titulo,
+      contenido,
+      urgente,
+      autorId: currentUser.id,
+      fechaHora: ahoraISO(),
+    };
+    setAvisos((prev) => [...prev, aviso]);
+    return aviso;
   }
 
   function renderContenido() {
@@ -628,10 +1479,31 @@ export default function App() {
         );
       case "cuotas":
         return (
-          <Cuotas residentes={residentes} cuotas={cuotas} onAgregarCuota={handleAgregarCuota} onTogglePagado={handleTogglePagado} />
+          <Cuotas residentes={residentes} cuotas={cuotas} hoy={hoy} onAgregarCuota={handleAgregarCuota} onPagoVentanilla={handlePagoVentanilla} />
         );
       case "estado":
-        return <EstadoCuenta key={currentUser.id} residentes={residentes} cuotas={cuotas} currentUser={currentUser} />;
+        return <EstadoCuenta key={currentUser.id} residentes={residentes} cuotas={cuotas} currentUser={currentUser} hoy={hoy} />;
+      case "pagos":
+        return (
+          <Pagos
+            key={currentUser.id}
+            residentes={residentes}
+            cuotas={cuotas}
+            hoy={hoy}
+            currentUser={currentUser}
+            onEnviarComprobante={handleEnviarComprobante}
+            onValidar={handleValidar}
+            onRechazar={handleRechazar}
+          />
+        );
+      case "adeudos":
+        return <Adeudos residentes={residentes} cuotas={cuotas} notificaciones={notificaciones} hoy={hoy} onGenerar={handleGenerarNotificaciones} />;
+      case "reportes":
+        return <Reportes residentes={residentes} cuotas={cuotas} hoy={hoy} />;
+      case "avisos":
+        return <Avisos avisos={avisos} residentes={residentes} notificaciones={notificaciones} currentUser={currentUser} />;
+      case "publicar":
+        return <PublicarAvisos key={currentUser.id} avisos={avisos} residentes={residentes} currentUser={currentUser} onPublicar={handlePublicar} />;
       default:
         return null;
     }
@@ -639,7 +1511,7 @@ export default function App() {
 
   return (
     <div className="min-h-screen bg-stone-50 flex text-stone-800">
-      <aside className="w-64 bg-emerald-900 text-emerald-50 flex flex-col">
+      <aside className="w-64 shrink-0 bg-emerald-900 text-emerald-50 flex flex-col print:hidden">
         <div className="flex items-center gap-2 px-5 py-5 border-b border-emerald-800">
           <Trees size={22} className="text-amber-400" />
           <div>
@@ -648,24 +1520,29 @@ export default function App() {
           </div>
         </div>
         <nav className="flex-1 py-3">
-          {TABS.map((tab) => {
+          {TABS.map((tab, i) => {
             const Icon = tab.icon;
             const active = activeTab === tab.id;
             const bloqueada = !canAccess(tab.id, currentUser);
+            const nuevoSprint = i === 0 || TABS[i - 1].sprint !== tab.sprint;
             return (
-              <button
-                key={tab.id}
-                onClick={() => setActiveTab(tab.id)}
-                className={`w-full flex items-center gap-3 px-5 py-3 text-sm text-left border-l-4 ${
-                  active
-                    ? "border-amber-400 bg-emerald-800 text-white"
-                    : "border-transparent text-emerald-100 hover:bg-emerald-800/60"
-                }`}
-              >
-                <Icon size={17} />
-                <span className="flex-1">{tab.label}</span>
-                {bloqueada && <Lock size={14} className="text-emerald-400" aria-label="Sección restringida" />}
-              </button>
+              <div key={tab.id}>
+                {nuevoSprint && (
+                  <p className="px-5 pt-3 pb-1 text-[11px] uppercase tracking-wider text-emerald-400">Sprint {tab.sprint}</p>
+                )}
+                <button
+                  onClick={() => setActiveTab(tab.id)}
+                  className={`w-full flex items-center gap-3 px-5 py-2.5 text-sm text-left border-l-4 ${
+                    active
+                      ? "border-amber-400 bg-emerald-800 text-white"
+                      : "border-transparent text-emerald-100 hover:bg-emerald-800/60"
+                  }`}
+                >
+                  <Icon size={17} />
+                  <span className="flex-1">{tab.label}</span>
+                  {bloqueada && <Lock size={14} className="text-emerald-400" aria-label="Sección restringida" />}
+                </button>
+              </div>
             );
           })}
         </nav>
@@ -680,11 +1557,24 @@ export default function App() {
           )}
         </div>
         <div className="px-5 py-4 border-t border-emerald-800 text-xs text-emerald-300">
-          Sprint 1 · Proyecto S.U.D.I.<br />Materia Proyecto 2 — Scrum
+          Sprint 2 · Proyecto S.U.D.I.<br />Materia Proyecto 2 — Scrum
         </div>
       </aside>
 
-      <main className="flex-1 px-8 py-8 max-w-3xl">{renderContenido()}</main>
+      <main className="flex-1 px-8 py-8 max-w-4xl">
+        {currentUser && urgentes.length > 0 && activeTab !== "avisos" && (
+          <button
+            onClick={() => setActiveTab("avisos")}
+            className="w-full text-left flex items-start gap-2 bg-red-50 border border-red-300 text-red-800 rounded p-3 mb-6 print:hidden"
+          >
+            <AlertTriangle size={18} className="mt-0.5 shrink-0" />
+            <span className="text-sm">
+              <span className="font-medium">Notificación urgente: {urgentes[0].titulo}.</span> {fmtFechaHora(urgentes[0].fechaHora)} · Ver detalle
+            </span>
+          </button>
+        )}
+        {renderContenido()}
+      </main>
     </div>
   );
 }
