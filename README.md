@@ -10,10 +10,10 @@ documentada en Proyecto 1 y de un Product Backlog de 14 historias de usuario org
 |---|---|---|---|
 | Sprint 1 | HU-01 a HU-05 (usuarios, roles, login, cuotas, estado de cuenta) | 19 | **Completado** (con ajustes de revisión A5–A9) |
 | Sprint 2 | HU-06 a HU-10 (pagos, notificaciones, reportes, avisos) | 17 | **Completado** (con ajustes A11–A17) |
-| Sprint 3 | HU-11 a HU-14 (emergencias, incidencias, mantenimiento, votaciones) | 23 | Planificado — se desarrolla en la fase posterior |
+| Sprint 3 | HU-11 a HU-14 (emergencias, incidencias, mantenimiento, votaciones) | 23 | **Completado** (con ajustes A19–A22) |
 
-Avance acumulado: 36 de 59 puntos (61 %). Este repositorio solo contiene código de los sprints
-marcados como completados; el Sprint 3 se agregará al terminarlo.
+Avance acumulado: 59 de 59 puntos (100 %). Este repositorio contiene el código de los tres sprints;
+el código y la documentación coinciden con lo reportado en el Sprint Schedule.
 
 ## Sprint 1 — historias implementadas
 
@@ -35,7 +35,17 @@ marcados como completados; el Sprint 3 se agregará al terminarlo.
 | HU-09 Avisos generales | `PublicarAvisos`, `Avisos` | Secretario o Presidente publican avisos con título y contenido; los residentes los ven del más reciente al más antiguo |
 | HU-10 Notificaciones urgentes | `PublicarAvisos`, `Avisos` | La mesa directiva marca una publicación como urgente; se muestra destacada (también como banner en todas las secciones) y registra fecha y hora; historial de publicaciones |
 
+## Sprint 3 — historias implementadas
+
+| Historia | Componente (`src/App.jsx`) | Qué hace |
+|---|---|---|
+| HU-11 Directorio de emergencia | `Emergencias` | Todos los usuarios con sesión consultan los números de emergencia; botón de contacto rápido (`tel:`) a la caseta de vigilancia; la mesa directiva agrega, edita y elimina contactos desde su panel |
+| HU-12 Registro de incidencias | `Incidencias` | El residente registra una incidencia por tipo (alumbrado, seguridad, limpieza u otro); la mesa cambia el estatus (pendiente, en atención, resuelta); el residente ve solo sus incidencias con su estatus e historial |
+| HU-13 Solicitudes de mantenimiento | `Mantenimiento`, `FilaMantenimiento` | El residente describe el problema y envía la solicitud; la mesa asigna responsable y da seguimiento (solicitada, asignada, en proceso, concluida); al concluir, el residente recibe una notificación |
+| HU-14 Votaciones y encuestas | `Votaciones`, `TarjetaVotacion` | La mesa crea una votación con pregunta, opciones y fecha de cierre; cada residente vota una sola vez; al cerrarse (por fecha o manualmente) se muestran conteo y porcentaje automáticamente |
+
 ## Ajustes
+
 
 **Revisión del Sprint 1 (A5–A9)**
 
@@ -54,6 +64,13 @@ marcados como completados; el Sprint 3 se agregará al terminarlo.
 - **A15 (HU-07):** además de los adeudos vencidos, se genera un recordatorio a las cuotas que vencen en 3 días.
 - **A16 (HU-08):** el reporte se puede exportar a CSV e imprimir o guardar como PDF.
 - **A17 (HU-10):** historial de avisos y notificaciones urgentes publicados.
+
+**Sprint 3 (A19–A22)**
+
+- **A19 (HU-13 / HU-07):** las notificaciones se generalizan: además de adeudos y recordatorios, el residente recibe el aviso de mantenimiento concluido; la sección se renombra “Mis notificaciones”.
+- **A20 (HU-14):** el conteo solo se muestra al cerrar la votación y cada residente tiene un solo voto, para no influir en la decisión.
+- **A21 (HU-12 / HU-13):** las incidencias guardan historial de estatus; una solicitud de mantenimiento no puede asignarse sin indicar responsable.
+- **A22 (P3):** el Sprint 3 inició por HU-14 (la más grande) y se reservó tiempo para pruebas.
 
 ### Matriz de permisos
 
@@ -85,6 +102,13 @@ Flujo sugerido para probar el Sprint 2: entra como Jorge → *Pagos y comprobant
 entra como Carlos → *Pagos y comprobantes* → valida el pago; en *Adeudos y notificaciones* genera las
 notificaciones; como Ana abre *Reportes de recaudación*; como Marta o Carlos publica un aviso en *Publicar avisos*.
 
+Flujo sugerido para probar el Sprint 3: como Jorge abre *Registro de incidencias* y registra una; entra como Marta y
+cambia su estatus; como Jorge solicita un mantenimiento, como Carlos asigna responsable y lo marca “Concluida”, y Jorge
+ve la notificación en *Avisos*; como Ana crea una votación, los residentes votan y Ana la cierra para ver el conteo.
+
+Pruebas automáticas (opcionales, solo locales): 25 pruebas con Vitest y Testing Library cubren los criterios de aceptación
+de los tres sprints.
+
 ## Cómo ejecutarlo
 
 Requiere [Node.js](https://nodejs.org/) 18 o superior.
@@ -100,7 +124,9 @@ Abre la URL que muestra la terminal (normalmente `http://localhost:5173`).
 
 - El estado vive en memoria (`useState`): al recargar la página los datos vuelven a los valores iniciales.
 - La recuperación de contraseña es una simulación; no envía correos reales.
-- Las notificaciones de adeudo se muestran dentro de la plataforma; no se envían por correo ni mensaje.
+- Incidencias, solicitudes de mantenimiento y votos viven en memoria igual que el resto de los datos; no hay persistencia (pendiente P4 para futuras iteraciones).
+- El botón de contacto rápido usa un enlace `tel:`; solo marca en dispositivos con telefonía.
+- Las notificaciones se muestran dentro de la plataforma; no se envían por correo ni mensaje.
 - Del comprobante solo se guardan nombre, tipo y método; el archivo no se almacena (no hay servidor).
 - La fecha de referencia de vencimientos es la del reloj del navegador.
 - Las contraseñas se guardan en texto plano dentro del estado de la demo; en producción se usaría

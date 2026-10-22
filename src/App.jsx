@@ -19,6 +19,10 @@ import {
   Download,
   Printer,
   Clock,
+  PhoneCall,
+  ClipboardList,
+  Wrench,
+  Vote,
 } from "lucide-react";
 
 /*
@@ -39,6 +43,12 @@ import {
     HU-09  Avisos generales                           -> PublicarAvisos + Avisos
     HU-10  Notificaciones urgentes                    -> PublicarAvisos + Avisos
 
+  Sprint 3 (esta versión):
+    HU-11  Directorio de emergencia y contacto rápido -> Emergencias
+    HU-12  Registro de incidencias                    -> Incidencias
+    HU-13  Solicitud de mantenimiento                 -> Mantenimiento
+    HU-14  Votaciones y encuestas                     -> Votaciones
+
   Ajustes de la revisión del Sprint 1 (versión anterior): A5–A9.
   Ajustes del Sprint 2 (esta versión):
     A11  HU-04  Fecha límite de pago obligatoria en cada cuota (pendiente P1).
@@ -49,6 +59,15 @@ import {
     A15  HU-07  Además de los adeudos vencidos, recordatorio a cuotas que vencen en 3 días.
     A16  HU-08  Exportación a CSV e impresión / PDF del reporte.
     A17  HU-10  Historial de avisos y notificaciones urgentes publicados.
+
+  Ajustes del Sprint 3 (esta versión):
+    A19  HU-13  Las notificaciones del residente se generalizan: además de adeudos, recibe el aviso
+                de mantenimiento concluido (sección “Avisos y notificaciones”).
+    A20  HU-14  El conteo se muestra solo al cerrar la votación (por la mesa o por fecha) para no
+                influir en el voto; un residente solo vota una vez.
+    A21  HU-12/13  Cada cambio de estatus de una incidencia queda en un historial con fecha, y una
+                solicitud no puede asignarse sin indicar responsable.
+    A22  Sprint 3  Orden del sprint (P3): HU-14 primero y tiempo reservado para pruebas.
 
   No usa backend: el estado vive en memoria (useState). Al recargar la página los datos
   vuelven a los valores iniciales. En una iteración posterior se conectará a una base de datos.
@@ -85,6 +104,25 @@ const initialAvisos = [
   { id: 2, titulo: "Mantenimiento de áreas verdes", contenido: "El jardinero atenderá las áreas comunes del lunes al miércoles de la próxima semana.", urgente: false, autorId: 3, fechaHora: "2026-10-12T16:30:00" },
 ];
 
+const initialContactos = [
+  { id: 1, nombre: "Caseta de vigilancia", telefono: "442-100-0911", detalle: "Atención las 24 horas", rapido: true },
+  { id: 2, nombre: "Emergencias", telefono: "911", detalle: "Policía, bomberos y ambulancia", rapido: false },
+  { id: 3, nombre: "Cruz Roja", telefono: "065", detalle: "Atención médica de urgencia", rapido: false },
+  { id: 4, nombre: "Administración del residencial", telefono: "442-100-0100", detalle: "Lunes a viernes, 9:00 a 17:00 h", rapido: false },
+];
+
+const initialIncidencias = [
+  { id: 1, residenteId: 4, tipo: "Alumbrado", descripcion: "Lámpara fundida en el andador A.", fecha: "2026-10-16", estatus: "En atención",
+    historial: [{ estatus: "Pendiente", fecha: "2026-10-16" }, { estatus: "En atención", fecha: "2026-10-18" }] },
+];
+
+const initialMantenimientos = [];
+
+const initialVotaciones = [
+  { id: 1, pregunta: "¿Aprobamos pintar la fachada del residencial?", opciones: ["Sí", "No"], cierre: "2026-10-30", cerrada: false, votos: { 3: 0 } },
+  { id: 2, pregunta: "¿Qué horario prefieren para el salón comunal?", opciones: ["8:00 a 20:00 h", "9:00 a 22:00 h"], cierre: "2026-10-15", cerrada: false, votos: { 1: 1, 2: 1, 3: 0, 4: 1 } },
+];
+
 const TABS = [
   { id: "registro", label: "Registro de residentes", hu: "HU-01", sprint: 1, icon: UserPlus },
   { id: "roles", label: "Roles y permisos", hu: "HU-02", sprint: 1, icon: ShieldCheck },
@@ -96,6 +134,10 @@ const TABS = [
   { id: "reportes", label: "Reportes de recaudación", hu: "HU-08", sprint: 2, icon: BarChart3 },
   { id: "avisos", label: "Avisos y notificaciones", hu: "HU-09 · HU-10", sprint: 2, icon: Megaphone },
   { id: "publicar", label: "Publicar avisos", hu: "HU-09 · HU-10", sprint: 2, icon: PenSquare },
+  { id: "emergencias", label: "Directorio de emergencia", hu: "HU-11", sprint: 3, icon: PhoneCall },
+  { id: "incidencias", label: "Registro de incidencias", hu: "HU-12", sprint: 3, icon: ClipboardList },
+  { id: "mantenimiento", label: "Solicitudes de mantenimiento", hu: "HU-13", sprint: 3, icon: Wrench },
+  { id: "votaciones", label: "Votaciones y encuestas", hu: "HU-14", sprint: 3, icon: Vote },
 ];
 
 // Roles con acceso a cada sección (null = pública, sin necesidad de sesión)
@@ -110,6 +152,10 @@ const ACCESS = {
   reportes: MESA_DIRECTIVA,
   avisos: TODOS,
   publicar: MESA_DIRECTIVA,
+  emergencias: TODOS,
+  incidencias: TODOS,
+  mantenimiento: TODOS,
+  votaciones: TODOS,
 };
 
 function canAccess(tabId, user) {
@@ -924,7 +970,8 @@ function Pagos({ residentes, cuotas, hoy, currentUser, onEnviarComprobante, onVa
 }
 
 // ---------- HU-07 · Notificaciones de adeudo ----------
-function Adeudos({ residentes, cuotas, notificaciones, hoy, onGenerar }) {
+function Adeudos({ residentes, cuotas, notificaciones: todasNotif, hoy, onGenerar }) {
+  const notificaciones = todasNotif.filter((n) => n.tipo === "Vencida" || n.tipo === "Recordatorio");
   const [msg, setMsg] = useState("");
   const limite = sumarDias(hoy, DIAS_RECORDATORIO);
   const vencidas = cuotas.filter((c) => estatusCuota(c, hoy) === "Vencida");
@@ -1180,6 +1227,8 @@ function Reportes({ residentes, cuotas, hoy }) {
 }
 
 // ---------- HU-09 / HU-10 · Avisos generales y notificaciones urgentes ----------
+const ETIQUETA_NOTIF = { Vencida: "Adeudo vencido", Recordatorio: "Recordatorio", Mantenimiento: "Mantenimiento concluido" };
+
 function TarjetaAviso({ aviso, autor }) {
   return (
     <article
@@ -1215,10 +1264,10 @@ function Avisos({ avisos, residentes, notificaciones, currentUser }) {
 
       {mias.length > 0 && (
         <section className="mb-8">
-          <h3 className={subtitulo}>Mis notificaciones de adeudo ({mias.length})</h3>
+          <h3 className={subtitulo}>Mis notificaciones ({mias.length})</h3>
           {mias.map((n) => (
             <div key={n.id} className="rounded border border-amber-200 bg-amber-50 p-3 mb-2 text-sm text-amber-900">
-              <span className="font-medium">{n.tipo === "Vencida" ? "Adeudo vencido" : "Recordatorio"} · {fmtFecha(n.fecha)}.</span> {n.mensaje}
+              <span className="font-medium">{ETIQUETA_NOTIF[n.tipo] ?? n.tipo} · {fmtFecha(n.fecha)}.</span> {n.mensaje}
             </div>
           ))}
         </section>
@@ -1332,12 +1381,519 @@ function PublicarAvisos({ avisos, residentes, currentUser, onPublicar }) {
   );
 }
 
+// =====================================================================
+// SPRINT 3
+// =====================================================================
+
+const TIPOS_INCIDENCIA = ["Alumbrado", "Seguridad", "Limpieza", "Otro"];
+const ESTATUS_INCIDENCIA = ["Pendiente", "En atención", "Resuelta"];
+const ESTATUS_MANTENIMIENTO = ["Solicitada", "Asignada", "En proceso", "Concluida"];
+
+const ESTATUS_GENERAL_CLASE = {
+  Pendiente: "text-amber-800 bg-amber-50 border-amber-200",
+  "En atención": "text-sky-800 bg-sky-50 border-sky-200",
+  Resuelta: "text-emerald-800 bg-emerald-50 border-emerald-200",
+  Solicitada: "text-amber-800 bg-amber-50 border-amber-200",
+  Asignada: "text-sky-800 bg-sky-50 border-sky-200",
+  "En proceso": "text-indigo-800 bg-indigo-50 border-indigo-200",
+  Concluida: "text-emerald-800 bg-emerald-50 border-emerald-200",
+  Abierta: "text-emerald-800 bg-emerald-50 border-emerald-200",
+  Cerrada: "text-stone-700 bg-stone-100 border-stone-300",
+};
+
+function Pill({ texto }) {
+  return <span className={`inline-block text-xs px-2 py-0.5 rounded border ${ESTATUS_GENERAL_CLASE[texto] ?? ""}`}>{texto}</span>;
+}
+
+// ---------- HU-11 · Directorio de emergencia ----------
+function Emergencias({ contactos, currentUser, onAgregar, onEditar, onEliminar }) {
+  const esMesa = MESA_DIRECTIVA.includes(currentUser.rol);
+  const caseta = contactos.find((c) => c.rapido) ?? contactos[0];
+  const [form, setForm] = useState({ nombre: "", telefono: "", detalle: "" });
+  const [error, setError] = useState("");
+  const [editId, setEditId] = useState(null);
+  const [draft, setDraft] = useState({ nombre: "", telefono: "", detalle: "" });
+
+  function handleSubmit(e) {
+    e.preventDefault();
+    if (!form.nombre.trim() || !form.telefono.trim()) {
+      setError("Escribe el nombre y el teléfono del contacto.");
+      return;
+    }
+    onAgregar({ nombre: form.nombre.trim(), telefono: form.telefono.trim(), detalle: form.detalle.trim() });
+    setForm({ nombre: "", telefono: "", detalle: "" });
+    setError("");
+  }
+
+  function guardarEdicion(id) {
+    if (!draft.nombre.trim() || !draft.telefono.trim()) {
+      setError("El nombre y el teléfono no pueden quedar vacíos.");
+      return;
+    }
+    onEditar(id, { nombre: draft.nombre.trim(), telefono: draft.telefono.trim(), detalle: draft.detalle.trim() });
+    setEditId(null);
+    setError("");
+  }
+
+  return (
+    <div>
+      <EncabezadoHU
+        tabId="emergencias"
+        titulo="Directorio de emergencia"
+        historia="Como residente, quiero contar con un directorio de emergencia y un botón de contacto rápido, para solicitar ayuda de forma inmediata ante una eventualidad."
+      />
+
+      {caseta && (
+        <div className="max-w-md bg-red-50 border border-red-300 rounded p-5 mb-8">
+          <p className="text-xs uppercase tracking-wide text-red-800 mb-1">Contacto rápido</p>
+          <p className="text-sm text-stone-700 mb-3">{caseta.nombre} · <span className="font-medium">{caseta.telefono}</span></p>
+          <a
+            href={`tel:${caseta.telefono.replace(/[^0-9+]/g, "")}`}
+            className="inline-flex items-center gap-2 bg-red-700 hover:bg-red-800 text-white text-sm font-medium px-4 py-2 rounded"
+          >
+            <PhoneCall size={16} /> Llamar a la caseta
+          </a>
+        </div>
+      )}
+
+      <h3 className={subtitulo}>Números de emergencia ({contactos.length})</h3>
+      {error && <p className="text-sm text-red-700 mb-2">{error}</p>}
+      <div className="overflow-x-auto mb-8">
+        <table className="w-full text-sm">
+          <thead>
+            <tr className="text-left text-stone-500 border-b border-stone-300">
+              <th className={thClass}>Contacto</th>
+              <th className={thClass}>Teléfono</th>
+              <th className={thClass}>Detalle</th>
+              {esMesa && <th className={thClass}>Panel de la mesa directiva</th>}
+            </tr>
+          </thead>
+          <tbody>
+            {contactos.map((c) =>
+              editId === c.id ? (
+                <tr key={c.id} className="border-b border-stone-100">
+                  <td className="py-2 pr-2"><input aria-label="Editar nombre" className={inputClass} value={draft.nombre} onChange={(e) => setDraft({ ...draft, nombre: e.target.value })} /></td>
+                  <td className="py-2 pr-2"><input aria-label="Editar teléfono" className={inputClass} value={draft.telefono} onChange={(e) => setDraft({ ...draft, telefono: e.target.value })} /></td>
+                  <td className="py-2 pr-2"><input aria-label="Editar detalle" className={inputClass} value={draft.detalle} onChange={(e) => setDraft({ ...draft, detalle: e.target.value })} /></td>
+                  <td className="py-2 pr-2 whitespace-nowrap">
+                    <button onClick={() => guardarEdicion(c.id)} className="text-xs px-2 py-1 rounded bg-emerald-800 text-white mr-1">Guardar</button>
+                    <button onClick={() => setEditId(null)} className="text-xs px-2 py-1 rounded border border-stone-300">Cancelar</button>
+                  </td>
+                </tr>
+              ) : (
+                <tr key={c.id} className="border-b border-stone-100">
+                  <td className="py-2 pr-4 text-stone-800">{c.nombre}</td>
+                  <td className="py-2 pr-4 text-stone-800 font-medium">{c.telefono}</td>
+                  <td className="py-2 pr-4 text-stone-600">{c.detalle}</td>
+                  {esMesa && (
+                    <td className="py-2 pr-4 whitespace-nowrap">
+                      <button
+                        onClick={() => { setEditId(c.id); setDraft({ nombre: c.nombre, telefono: c.telefono, detalle: c.detalle }); }}
+                        aria-label={`Editar ${c.nombre}`}
+                        className="text-xs px-2 py-1 rounded border border-stone-300 hover:bg-stone-100 mr-1"
+                      >Editar</button>
+                      <button onClick={() => onEliminar(c.id)} aria-label={`Eliminar ${c.nombre}`} className="text-xs px-2 py-1 rounded border border-red-300 text-red-800 hover:bg-red-50">Eliminar</button>
+                    </td>
+                  )}
+                </tr>
+              )
+            )}
+          </tbody>
+        </table>
+      </div>
+
+      {esMesa && (
+        <form onSubmit={handleSubmit} className="max-w-md bg-white border border-stone-200 rounded p-5">
+          <h3 className="text-sm font-medium text-stone-700 mb-3">Agregar contacto al directorio</h3>
+          <Field label="Nombre del contacto">
+            <input className={inputClass} value={form.nombre} onChange={(e) => setForm({ ...form, nombre: e.target.value })} placeholder="Ej. Bomberos" />
+          </Field>
+          <Field label="Teléfono">
+            <input className={inputClass} value={form.telefono} onChange={(e) => setForm({ ...form, telefono: e.target.value })} placeholder="Ej. 442-100-0000" />
+          </Field>
+          <Field label="Detalle (opcional)">
+            <input className={inputClass} value={form.detalle} onChange={(e) => setForm({ ...form, detalle: e.target.value })} placeholder="Ej. Atención las 24 horas" />
+          </Field>
+          <button type="submit" className="bg-emerald-800 hover:bg-emerald-900 text-white text-sm font-medium px-4 py-2 rounded">Agregar contacto</button>
+        </form>
+      )}
+    </div>
+  );
+}
+
+// ---------- HU-12 · Registro de incidencias ----------
+function Incidencias({ incidencias, residentes, currentUser, hoy, onRegistrar, onCambiarEstatus }) {
+  const esMesa = MESA_DIRECTIVA.includes(currentUser.rol);
+  const [tipo, setTipo] = useState(TIPOS_INCIDENCIA[0]);
+  const [descripcion, setDescripcion] = useState("");
+  const [error, setError] = useState("");
+  const [ok, setOk] = useState("");
+  const visibles = (esMesa ? incidencias : incidencias.filter((i) => i.residenteId === currentUser.id)).slice().sort((a, b) => b.id - a.id);
+  const nombre = (id) => residentes.find((r) => r.id === id)?.nombre ?? "—";
+
+  function handleSubmit(e) {
+    e.preventDefault();
+    if (!descripcion.trim()) {
+      setError("Describe la incidencia.");
+      setOk("");
+      return;
+    }
+    onRegistrar({ tipo, descripcion: descripcion.trim() });
+    setDescripcion("");
+    setError("");
+    setOk(`Incidencia de ${tipo.toLowerCase()} registrada. Puedes seguir su estatus en esta pantalla.`);
+  }
+
+  return (
+    <div>
+      <EncabezadoHU
+        tabId="incidencias"
+        titulo="Registro de incidencias"
+        historia="Como residente, quiero registrar y dar seguimiento a incidencias (alumbrado, seguridad, limpieza), para que la mesa directiva las atienda de forma oportuna."
+      />
+
+      <form onSubmit={handleSubmit} className="max-w-md bg-white border border-stone-200 rounded p-5 mb-8">
+        <Field label="Tipo de incidencia">
+          <select className={inputClass} value={tipo} onChange={(e) => setTipo(e.target.value)} aria-label="Tipo de incidencia">
+            {TIPOS_INCIDENCIA.map((t) => <option key={t}>{t}</option>)}
+          </select>
+        </Field>
+        <Field label="Descripción">
+          <textarea className={inputClass} rows={3} value={descripcion} onChange={(e) => setDescripcion(e.target.value)} placeholder="Ej. Lámpara fundida frente a la vivienda B-04" />
+        </Field>
+        {error && <p className="text-sm text-red-700 mb-3">{error}</p>}
+        {ok && <p className="text-sm text-emerald-700 mb-3">{ok}</p>}
+        <button type="submit" className="bg-emerald-800 hover:bg-emerald-900 text-white text-sm font-medium px-4 py-2 rounded">Registrar incidencia</button>
+      </form>
+
+      <h3 className={subtitulo}>{esMesa ? `Incidencias del residencial (${visibles.length})` : `Mis incidencias (${visibles.length})`}</h3>
+      <div className="overflow-x-auto">
+        <table className="w-full text-sm">
+          <thead>
+            <tr className="text-left text-stone-500 border-b border-stone-300">
+              <th className={thClass}>Fecha</th>
+              {esMesa && <th className={thClass}>Residente</th>}
+              <th className={thClass}>Tipo</th>
+              <th className={thClass}>Descripción</th>
+              <th className={thClass}>Estatus</th>
+              <th className={thClass}>Historial</th>
+            </tr>
+          </thead>
+          <tbody>
+            {visibles.length === 0 && (
+              <tr><td colSpan={esMesa ? 6 : 5} className="py-3 text-stone-500">Aún no hay incidencias registradas.</td></tr>
+            )}
+            {visibles.map((i) => (
+              <tr key={i.id} className="border-b border-stone-100 align-top">
+                <td className="py-2 pr-4 text-stone-600">{fmtFecha(i.fecha)}</td>
+                {esMesa && <td className="py-2 pr-4 text-stone-800">{nombre(i.residenteId)}</td>}
+                <td className="py-2 pr-4 text-stone-800">{i.tipo}</td>
+                <td className="py-2 pr-4 text-stone-600">{i.descripcion}</td>
+                <td className="py-2 pr-4">
+                  {esMesa ? (
+                    <select
+                      aria-label={`Estatus de la incidencia ${i.id}`}
+                      className="border border-stone-300 rounded px-2 py-1 text-xs"
+                      value={i.estatus}
+                      onChange={(e) => onCambiarEstatus(i.id, e.target.value)}
+                    >
+                      {ESTATUS_INCIDENCIA.map((s) => <option key={s}>{s}</option>)}
+                    </select>
+                  ) : (
+                    <Pill texto={i.estatus} />
+                  )}
+                </td>
+                <td className="py-2 pr-4 text-xs text-stone-500">
+                  {i.historial.map((h, k) => (
+                    <span key={k} className="block">{fmtFecha(h.fecha)} · {h.estatus}</span>
+                  ))}
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  );
+}
+
+// ---------- HU-13 · Solicitud de mantenimiento ----------
+function FilaMantenimiento({ m, nombreResidente, onActualizar }) {
+  const [responsable, setResponsable] = useState(m.responsable);
+  const [estatus, setEstatus] = useState(m.estatus);
+  const [error, setError] = useState("");
+
+  function guardar() {
+    if (estatus !== "Solicitada" && !responsable.trim()) {
+      setError("Indica quién atenderá la solicitud.");
+      return;
+    }
+    setError("");
+    onActualizar(m.id, { responsable: responsable.trim(), estatus });
+  }
+
+  return (
+    <tr className="border-b border-stone-100 align-top">
+      <td className="py-2 pr-4 text-stone-600">{fmtFecha(m.fecha)}</td>
+      <td className="py-2 pr-4 text-stone-800">{nombreResidente}</td>
+      <td className="py-2 pr-4 text-stone-600">{m.descripcion}{m.ubicacion ? ` (${m.ubicacion})` : ""}</td>
+      <td className="py-2 pr-4">
+        <input aria-label={`Responsable de la solicitud ${m.id}`} className="border border-stone-300 rounded px-2 py-1 text-xs w-32 mb-1" value={responsable} onChange={(e) => setResponsable(e.target.value)} placeholder="Responsable" />
+        <select aria-label={`Estatus de la solicitud ${m.id}`} className="block border border-stone-300 rounded px-2 py-1 text-xs mb-1" value={estatus} onChange={(e) => setEstatus(e.target.value)}>
+          {ESTATUS_MANTENIMIENTO.map((s) => <option key={s}>{s}</option>)}
+        </select>
+        <button onClick={guardar} aria-label={`Guardar solicitud ${m.id}`} className="text-xs px-2 py-1 rounded bg-emerald-800 text-white">Guardar</button>
+        {error && <p className="text-xs text-red-700 mt-1">{error}</p>}
+      </td>
+    </tr>
+  );
+}
+
+function Mantenimiento({ mantenimientos, residentes, currentUser, onSolicitar, onActualizar }) {
+  const esMesa = MESA_DIRECTIVA.includes(currentUser.rol);
+  const [descripcion, setDescripcion] = useState("");
+  const [ubicacion, setUbicacion] = useState("");
+  const [error, setError] = useState("");
+  const [ok, setOk] = useState("");
+  const mias = mantenimientos.filter((m) => m.residenteId === currentUser.id).slice().sort((a, b) => b.id - a.id);
+  const todas = mantenimientos.slice().sort((a, b) => b.id - a.id);
+  const nombre = (id) => residentes.find((r) => r.id === id)?.nombre ?? "—";
+
+  function handleSubmit(e) {
+    e.preventDefault();
+    if (!descripcion.trim()) {
+      setError("Describe el problema que necesita mantenimiento.");
+      setOk("");
+      return;
+    }
+    onSolicitar({ descripcion: descripcion.trim(), ubicacion: ubicacion.trim() });
+    setDescripcion("");
+    setUbicacion("");
+    setError("");
+    setOk("Solicitud enviada. La mesa directiva la asignará y verás aquí su avance.");
+  }
+
+  return (
+    <div>
+      <EncabezadoHU
+        tabId="mantenimiento"
+        titulo="Solicitudes de mantenimiento"
+        historia="Como residente, quiero solicitar y dar seguimiento a servicios de mantenimiento, para conocer el estatus de las reparaciones dentro del conjunto."
+      />
+
+      <form onSubmit={handleSubmit} className="max-w-md bg-white border border-stone-200 rounded p-5 mb-8">
+        <Field label="Describe el problema">
+          <textarea className={inputClass} rows={3} value={descripcion} onChange={(e) => setDescripcion(e.target.value)} placeholder="Ej. Fuga de agua en la bomba de la cisterna" />
+        </Field>
+        <Field label="Ubicación (opcional)">
+          <input className={inputClass} value={ubicacion} onChange={(e) => setUbicacion(e.target.value)} placeholder="Ej. Área común, andador A" />
+        </Field>
+        {error && <p className="text-sm text-red-700 mb-3">{error}</p>}
+        {ok && <p className="text-sm text-emerald-700 mb-3">{ok}</p>}
+        <button type="submit" className="bg-emerald-800 hover:bg-emerald-900 text-white text-sm font-medium px-4 py-2 rounded">Solicitar mantenimiento</button>
+      </form>
+
+      <h3 className={subtitulo}>Mis solicitudes ({mias.length})</h3>
+      <div className="overflow-x-auto mb-8">
+        <table className="w-full text-sm">
+          <thead>
+            <tr className="text-left text-stone-500 border-b border-stone-300">
+              <th className={thClass}>Fecha</th>
+              <th className={thClass}>Solicitud</th>
+              <th className={thClass}>Responsable</th>
+              <th className={thClass}>Estatus</th>
+            </tr>
+          </thead>
+          <tbody>
+            {mias.length === 0 && <tr><td colSpan={4} className="py-3 text-stone-500">Aún no has solicitado mantenimiento.</td></tr>}
+            {mias.map((m) => (
+              <tr key={m.id} className="border-b border-stone-100">
+                <td className="py-2 pr-4 text-stone-600">{fmtFecha(m.fecha)}</td>
+                <td className="py-2 pr-4 text-stone-800">{m.descripcion}{m.ubicacion ? ` (${m.ubicacion})` : ""}</td>
+                <td className="py-2 pr-4 text-stone-600">{m.responsable || "Sin asignar"}</td>
+                <td className="py-2 pr-4"><Pill texto={m.estatus} /></td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+
+      {esMesa && (
+        <section>
+          <h3 className={subtitulo}>Seguimiento de la mesa directiva ({todas.length})</h3>
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="text-left text-stone-500 border-b border-stone-300">
+                  <th className={thClass}>Fecha</th>
+                  <th className={thClass}>Residente</th>
+                  <th className={thClass}>Solicitud</th>
+                  <th className={thClass}>Asignación y estatus</th>
+                </tr>
+              </thead>
+              <tbody>
+                {todas.map((m) => (
+                  <FilaMantenimiento key={`${m.id}-${m.estatus}-${m.responsable}`} m={m} nombreResidente={nombre(m.residenteId)} onActualizar={onActualizar} />
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </section>
+      )}
+    </div>
+  );
+}
+
+// ---------- HU-14 · Votaciones y encuestas ----------
+const votacionCerrada = (v, hoy) => v.cerrada || v.cierre < hoy;
+
+function TarjetaVotacion({ v, hoy, currentUser, esMesa, onVotar, onCerrar }) {
+  const [opcion, setOpcion] = useState("");
+  const [error, setError] = useState("");
+  const cerrada = votacionCerrada(v, hoy);
+  const yaVoto = Object.prototype.hasOwnProperty.call(v.votos, currentUser.id);
+  const total = Object.keys(v.votos).length;
+  const conteo = v.opciones.map((_, i) => Object.values(v.votos).filter((x) => x === i).length);
+  const maximo = Math.max(...conteo);
+
+  function votar(e) {
+    e.preventDefault();
+    if (opcion === "") {
+      setError("Elige una opción antes de votar.");
+      return;
+    }
+    onVotar(v.id, Number(opcion));
+    setError("");
+  }
+
+  return (
+    <article className="bg-white border border-stone-200 rounded p-5 mb-4 max-w-xl">
+      <div className="flex items-center gap-2 mb-1">
+        <h4 className="font-medium text-stone-800">{v.pregunta}</h4>
+        <Pill texto={cerrada ? "Cerrada" : "Abierta"} />
+      </div>
+      <p className="text-xs text-stone-500 mb-3">Cierra el {fmtFecha(v.cierre)} · {total} {total === 1 ? "voto" : "votos"} emitidos</p>
+
+      {!cerrada && yaVoto && (
+        <p className="flex items-center gap-2 text-sm text-emerald-700"><CheckCircle2 size={16} /> Tu voto quedó registrado. Los resultados se muestran al cerrar la votación.</p>
+      )}
+      {!cerrada && !yaVoto && (
+        <form onSubmit={votar}>
+          {v.opciones.map((o, i) => (
+            <label key={i} className="flex items-center gap-2 text-sm text-stone-800 mb-1">
+              <input type="radio" name={`voto-${v.id}`} value={i} checked={opcion === String(i)} onChange={() => setOpcion(String(i))} />
+              {o}
+            </label>
+          ))}
+          {error && <p className="text-sm text-red-700 my-2">{error}</p>}
+          <button type="submit" aria-label={`Votar en ${v.pregunta}`} className="mt-2 bg-emerald-800 hover:bg-emerald-900 text-white text-sm font-medium px-4 py-2 rounded">Emitir voto</button>
+        </form>
+      )}
+      {cerrada && (
+        <div>
+          <p className="text-xs uppercase tracking-wide text-stone-500 mb-2">Resultado final</p>
+          {v.opciones.map((o, i) => {
+            const pct = total ? Math.round((conteo[i] / total) * 100) : 0;
+            return (
+              <div key={i} className="mb-2">
+                <div className="flex justify-between text-sm">
+                  <span className={conteo[i] === maximo && total > 0 ? "font-medium text-emerald-900" : "text-stone-700"}>{o}</span>
+                  <span className="text-stone-600">{conteo[i]} {conteo[i] === 1 ? "voto" : "votos"} · {pct} %</span>
+                </div>
+                <div className="h-2 bg-stone-100 rounded"><div className="h-2 rounded bg-emerald-700" style={{ width: `${pct}%` }} /></div>
+              </div>
+            );
+          })}
+          <p className="text-xs text-stone-500 mt-2">Total: {total} {total === 1 ? "voto" : "votos"}</p>
+        </div>
+      )}
+      {esMesa && !cerrada && (
+        <button onClick={() => onCerrar(v.id)} aria-label={`Cerrar votación ${v.pregunta}`} className="mt-3 text-xs px-2 py-1 rounded border border-stone-300 hover:bg-stone-100">Cerrar votación ahora</button>
+      )}
+    </article>
+  );
+}
+
+function Votaciones({ votaciones, currentUser, hoy, onCrear, onVotar, onCerrar }) {
+  const esMesa = MESA_DIRECTIVA.includes(currentUser.rol);
+  const [pregunta, setPregunta] = useState("");
+  const [opciones, setOpciones] = useState("");
+  const [cierre, setCierre] = useState("");
+  const [error, setError] = useState("");
+  const [ok, setOk] = useState("");
+
+  function handleSubmit(e) {
+    e.preventDefault();
+    const lista = opciones.split("\n").map((o) => o.trim()).filter(Boolean);
+    if (!pregunta.trim() || lista.length < 2 || !cierre) {
+      setError("Escribe la pregunta, al menos dos opciones (una por línea) y la fecha de cierre.");
+      setOk("");
+      return;
+    }
+    if (cierre < hoy) {
+      setError("La fecha de cierre no puede ser anterior a hoy.");
+      setOk("");
+      return;
+    }
+    onCrear({ pregunta: pregunta.trim(), opciones: lista, cierre });
+    setPregunta("");
+    setOpciones("");
+    setCierre("");
+    setError("");
+    setOk("Votación creada. Los residentes ya pueden votar.");
+  }
+
+  const ordenadas = votaciones.slice().sort((a, b) => b.id - a.id);
+  const abiertas = ordenadas.filter((v) => !votacionCerrada(v, hoy));
+  const cerradas = ordenadas.filter((v) => votacionCerrada(v, hoy));
+
+  return (
+    <div>
+      <EncabezadoHU
+        tabId="votaciones"
+        titulo="Votaciones y encuestas"
+        historia="Como mesa directiva, quiero crear votaciones y encuestas con participación remota, para tomar decisiones junto con los residentes sin necesidad de asamblea presencial."
+      />
+
+      {esMesa && (
+        <form onSubmit={handleSubmit} className="max-w-md bg-white border border-stone-200 rounded p-5 mb-8">
+          <h3 className="text-sm font-medium text-stone-700 mb-3">Crear una votación</h3>
+          <Field label="Pregunta">
+            <input className={inputClass} value={pregunta} onChange={(e) => setPregunta(e.target.value)} placeholder="Ej. ¿Aprobamos pintar la fachada?" />
+          </Field>
+          <Field label="Opciones (una por línea)">
+            <textarea className={inputClass} rows={3} value={opciones} onChange={(e) => setOpciones(e.target.value)} placeholder={"Sí\nNo"} />
+          </Field>
+          <Field label="Fecha de cierre">
+            <input type="date" className={inputClass} value={cierre} onChange={(e) => setCierre(e.target.value)} />
+          </Field>
+          {error && <p className="text-sm text-red-700 mb-3">{error}</p>}
+          {ok && <p className="text-sm text-emerald-700 mb-3">{ok}</p>}
+          <button type="submit" className="bg-emerald-800 hover:bg-emerald-900 text-white text-sm font-medium px-4 py-2 rounded">Crear votación</button>
+        </form>
+      )}
+
+      <h3 className={subtitulo}>Votaciones abiertas ({abiertas.length})</h3>
+      {abiertas.length === 0 && <p className="text-sm text-stone-500 mb-6">No hay votaciones abiertas.</p>}
+      {abiertas.map((v) => <TarjetaVotacion key={v.id} v={v} hoy={hoy} currentUser={currentUser} esMesa={esMesa} onVotar={onVotar} onCerrar={onCerrar} />)}
+
+      <h3 className={`${subtitulo} mt-6`}>Votaciones cerradas ({cerradas.length})</h3>
+      {cerradas.length === 0 && <p className="text-sm text-stone-500">Aún no hay resultados.</p>}
+      {cerradas.map((v) => <TarjetaVotacion key={v.id} v={v} hoy={hoy} currentUser={currentUser} esMesa={esMesa} onVotar={onVotar} onCerrar={onCerrar} />)}
+    </div>
+  );
+}
+
 export default function App({ hoy: hoyProp } = {}) {
   const hoy = hoyProp ?? hoyLocal();
   const [residentes, setResidentes] = useState(initialResidentes);
   const [cuotas, setCuotas] = useState(initialCuotas);
   const [avisos, setAvisos] = useState(initialAvisos);
   const [notificaciones, setNotificaciones] = useState([]);
+  const [contactos, setContactos] = useState(initialContactos);
+  const [incidencias, setIncidencias] = useState(initialIncidencias);
+  const [mantenimientos, setMantenimientos] = useState(initialMantenimientos);
+  const [votaciones, setVotaciones] = useState(initialVotaciones);
   const [activeTab, setActiveTab] = useState("registro");
   const [currentUserId, setCurrentUserId] = useState(null);
 
@@ -1459,6 +2015,82 @@ export default function App({ hoy: hoyProp } = {}) {
     return aviso;
   }
 
+  const esMesaActual = !!currentUser && MESA_DIRECTIVA.includes(currentUser.rol);
+  const siguienteId = (lista) => (lista.length ? Math.max(...lista.map((x) => x.id)) + 1 : 1);
+
+  // HU-11: la mesa directiva mantiene el directorio de emergencia
+  function handleAgregarContacto(datos) {
+    if (!esMesaActual) return;
+    setContactos((prev) => [...prev, { id: siguienteId(prev), ...datos, rapido: false }]);
+  }
+  function handleEditarContacto(id, datos) {
+    if (!esMesaActual) return;
+    setContactos((prev) => prev.map((c) => (c.id === id ? { ...c, ...datos } : c)));
+  }
+  function handleEliminarContacto(id) {
+    if (!esMesaActual) return;
+    setContactos((prev) => prev.filter((c) => c.id !== id || c.rapido)); // el contacto rápido no se elimina
+  }
+
+  // HU-12: el residente registra; la mesa cambia el estatus y queda historial (A21)
+  function handleRegistrarIncidencia({ tipo, descripcion }) {
+    setIncidencias((prev) => [
+      ...prev,
+      { id: siguienteId(prev), residenteId: currentUser.id, tipo, descripcion, fecha: hoy, estatus: "Pendiente", historial: [{ estatus: "Pendiente", fecha: hoy }] },
+    ]);
+  }
+  function handleCambiarEstatusIncidencia(id, estatus) {
+    if (!esMesaActual) return;
+    setIncidencias((prev) =>
+      prev.map((i) => (i.id === id && i.estatus !== estatus ? { ...i, estatus, historial: [...i.historial, { estatus, fecha: hoy }] } : i))
+    );
+  }
+
+  // HU-13: solicitud, asignación y aviso de cierre al residente (A19)
+  function handleSolicitarMantenimiento({ descripcion, ubicacion }) {
+    setMantenimientos((prev) => [
+      ...prev,
+      { id: siguienteId(prev), residenteId: currentUser.id, descripcion, ubicacion, fecha: hoy, estatus: "Solicitada", responsable: "" },
+    ]);
+  }
+  function handleActualizarMantenimiento(id, { responsable, estatus }) {
+    if (!esMesaActual) return;
+    const actual = mantenimientos.find((m) => m.id === id);
+    if (!actual) return;
+    setMantenimientos((prev) => prev.map((m) => (m.id === id ? { ...m, responsable, estatus } : m)));
+    if (estatus === "Concluida" && actual.estatus !== "Concluida") {
+      setNotificaciones((prev) => [
+        {
+          id: siguienteId(prev),
+          residenteId: actual.residenteId,
+          tipo: "Mantenimiento",
+          fecha: hoy,
+          mensaje: `Tu solicitud de mantenimiento “${actual.descripcion}” concluyó. Atendió: ${responsable}.`,
+        },
+        ...prev,
+      ]);
+    }
+  }
+
+  // HU-14: votaciones de la mesa directiva; un voto por residente (A20)
+  function handleCrearVotacion({ pregunta, opciones, cierre }) {
+    if (!esMesaActual) return;
+    setVotaciones((prev) => [...prev, { id: siguienteId(prev), pregunta, opciones, cierre, cerrada: false, votos: {} }]);
+  }
+  function handleVotar(id, opcion) {
+    setVotaciones((prev) =>
+      prev.map((v) => {
+        if (v.id !== id || votacionCerrada(v, hoy)) return v;
+        if (Object.prototype.hasOwnProperty.call(v.votos, currentUser.id)) return v;
+        return { ...v, votos: { ...v.votos, [currentUser.id]: opcion } };
+      })
+    );
+  }
+  function handleCerrarVotacion(id) {
+    if (!esMesaActual) return;
+    setVotaciones((prev) => prev.map((v) => (v.id === id ? { ...v, cerrada: true } : v)));
+  }
+
   function renderContenido() {
     if (!canAccess(activeTab, currentUser)) {
       return <AccesoRestringido tab={tabActual} user={currentUser} />;
@@ -1504,6 +2136,14 @@ export default function App({ hoy: hoyProp } = {}) {
         return <Avisos avisos={avisos} residentes={residentes} notificaciones={notificaciones} currentUser={currentUser} />;
       case "publicar":
         return <PublicarAvisos key={currentUser.id} avisos={avisos} residentes={residentes} currentUser={currentUser} onPublicar={handlePublicar} />;
+      case "emergencias":
+        return <Emergencias key={currentUser.id} contactos={contactos} currentUser={currentUser} onAgregar={handleAgregarContacto} onEditar={handleEditarContacto} onEliminar={handleEliminarContacto} />;
+      case "incidencias":
+        return <Incidencias key={currentUser.id} incidencias={incidencias} residentes={residentes} currentUser={currentUser} hoy={hoy} onRegistrar={handleRegistrarIncidencia} onCambiarEstatus={handleCambiarEstatusIncidencia} />;
+      case "mantenimiento":
+        return <Mantenimiento key={currentUser.id} mantenimientos={mantenimientos} residentes={residentes} currentUser={currentUser} onSolicitar={handleSolicitarMantenimiento} onActualizar={handleActualizarMantenimiento} />;
+      case "votaciones":
+        return <Votaciones key={currentUser.id} votaciones={votaciones} currentUser={currentUser} hoy={hoy} onCrear={handleCrearVotacion} onVotar={handleVotar} onCerrar={handleCerrarVotacion} />;
       default:
         return null;
     }
@@ -1557,7 +2197,7 @@ export default function App({ hoy: hoyProp } = {}) {
           )}
         </div>
         <div className="px-5 py-4 border-t border-emerald-800 text-xs text-emerald-300">
-          Sprint 2 · Proyecto S.U.D.I.<br />Materia Proyecto 2 — Scrum
+          Sprint 3 · Proyecto S.U.D.I.<br />Materia Proyecto 2 — Scrum
         </div>
       </aside>
 
