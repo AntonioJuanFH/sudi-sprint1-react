@@ -89,6 +89,22 @@ el código y la documentación coinciden con lo reportado en el Sprint Schedule.
 | Publicar aviso general | ✓ | — | ✓ | — | — |
 | Publicar notificación urgente | ✓ | ✓ | ✓ | — | — |
 
+## Equipo y responsabilidades
+
+Historias asignadas en el Product Backlog y en el Sprint Schedule de cada sprint (horas estimadas y puntos de historia).
+
+| Integrante | Rol | Historias | Puntos | Horas |
+|---|---|---|:-:|:-:|
+| Juan Antonio Fuentes Herrera | Developer (integración del repositorio) | HU-01, HU-03, HU-06, HU-10, HU-12 y pendiente P1 | 19 | 78 |
+| Jorge Eduardo Ledesma Cruz | Developer | HU-02, HU-08, HU-11 | 13 | 52 |
+| Melissa Suzette Jimenez Alvarado | Developer | HU-04, HU-07, HU-13 | 13 | 52 |
+| Jorge Luis Espinosa Acosta | Developer | HU-05, HU-09, HU-14 | 14 | 56 |
+| Diego Said Viveros | Product Owner | Revisión de los sprints | — | — |
+| Ana Hernández | Scrum Master | Revisión de los sprints | — | — |
+
+El código de los tres sprints se integra en este repositorio desde la cuenta del Developer; la autoría de cada historia
+corresponde al integrante indicado en la tabla.
+
 ## Cuentas de prueba (contraseña `1234`)
 
 | Rol | Correo |
