@@ -89,6 +89,22 @@ el código y la documentación coinciden con lo reportado en el Sprint Schedule.
 | Publicar aviso general | ✓ | — | ✓ | — | — |
 | Publicar notificación urgente | ✓ | ✓ | ✓ | — | — |
 
+## Revisión de la Unidad 4 — modificaciones
+
+En la reunión de revisión inicial (Unidad 4, Actividad 1) el Product Owner propuso que la interfaz se ajustara mejor
+a celulares. En una pantalla de 375 px el menú lateral ocupaba 256 px y el contenido se desbordaba hasta unos 810 px.
+Se acordó la propuesta **M6** y se realizó en la Actividad 2:
+
+| Cambio | Detalle |
+|---|---|
+| Barra superior en celular | En pantallas menores a 768 px aparece una barra con el nombre del sistema y el botón “Abrir menú”. |
+| Menú lateral desplegable | El menú se abre sobre el contenido, se cierra con “Cerrar menú”, al tocar fuera o al elegir una sección; en tableta y computadora sigue fijo a la izquierda. |
+| Contenido sin desbordes | El área principal ya no se ensancha: las tablas se desplazan dentro de su recuadro y las tarjetas de resumen pasan a una o dos columnas. |
+| Accesibilidad | Enlace “Saltar al contenido”, foco visible en el menú, `aria-expanded` en el botón de menú y `aria-current` en la sección activa. |
+
+Comprobación: con 375, 768 y 1280 px de ancho ninguna de las 14 secciones genera desplazamiento horizontal de la página
+(revisado con las cuentas de mesa directiva y de residente). Se agregaron 3 pruebas automáticas del menú (28 en total).
+
 ## Equipo y responsabilidades
 
 Historias asignadas en el Product Backlog y en el Sprint Schedule de cada sprint (horas estimadas y puntos de historia).
@@ -122,7 +138,7 @@ Flujo sugerido para probar el Sprint 3: como Jorge abre *Registro de incidencias
 cambia su estatus; como Jorge solicita un mantenimiento, como Carlos asigna responsable y lo marca “Concluida”, y Jorge
 ve la notificación en *Avisos*; como Ana crea una votación, los residentes votan y Ana la cierra para ver el conteo.
 
-Pruebas automáticas (opcionales, solo locales): 25 pruebas con Vitest y Testing Library cubren los criterios de aceptación
+Pruebas automáticas (opcionales, solo locales): 28 pruebas con Vitest y Testing Library cubren los criterios de aceptación
 de los tres sprints.
 
 ## Cómo ejecutarlo

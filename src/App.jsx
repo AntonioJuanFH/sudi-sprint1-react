@@ -23,6 +23,8 @@ import {
   ClipboardList,
   Wrench,
   Vote,
+  Menu,
+  X,
 } from "lucide-react";
 
 /*
@@ -68,6 +70,12 @@ import {
     A21  HU-12/13  Cada cambio de estatus de una incidencia queda en un historial con fecha, y una
                 solicitud no puede asignarse sin indicar responsable.
     A22  Sprint 3  Orden del sprint (P3): HU-14 primero y tiempo reservado para pruebas.
+
+  Unidad 4, Actividad 2 (revisión de modificaciones):
+    M6   Interfaz adaptable a celular: barra superior con botón de menú, menú lateral que se
+         abre y se cierra en pantallas pequeñas, contenido que no se desborda (las tablas se
+         desplazan dentro de su recuadro), tarjetas en una columna y enlace para saltar al
+         contenido. Propuesta por el Product Owner en la reunión de revisión inicial.
 
   No usa backend: el estado vive en memoria (useState). Al recargar la página los datos
   vuelven a los valores iniciales. En una iteración posterior se conectará a una base de datos.
@@ -669,7 +677,7 @@ function EstadoCuenta({ residentes, cuotas, currentUser, hoy }) {
         )}
       </div>
 
-      <div className="grid grid-cols-2 gap-4 max-w-md mb-8">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 max-w-md mb-8">
         <div className="bg-white border border-stone-200 rounded p-4">
           <p className="text-xs text-stone-500 uppercase tracking-wide mb-1">Total pagado</p>
           <p className="text-2xl font-serif text-emerald-800">{money(totalPagado)}</p>
@@ -1004,7 +1012,7 @@ function Adeudos({ residentes, cuotas, notificaciones: todasNotif, hoy, onGenera
         historia="Como tesorera, quiero que el sistema genere notificaciones automáticas de adeudo, para recordar a los residentes morosos sus pagos pendientes."
       />
 
-      <div className="grid grid-cols-3 gap-4 max-w-2xl mb-6">
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 max-w-2xl mb-6">
         <div className="bg-white border border-stone-200 rounded p-4">
           <p className="text-xs text-stone-500 uppercase tracking-wide mb-1">Residentes morosos</p>
           <p className="text-2xl font-serif text-red-700">{morosos.length}</p>
@@ -1164,7 +1172,7 @@ function Reportes({ residentes, cuotas, hoy }) {
         Reporte de recaudación · Periodo: <span className="font-medium text-stone-800">{periodo === "Todos" ? "Todos los periodos" : periodo}</span> · Emitido el {fmtFecha(hoy)}
       </p>
 
-      <div className="grid grid-cols-4 gap-4 max-w-2xl mb-8">
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 max-w-2xl mb-8">
         <div className="bg-white border border-stone-200 rounded p-4">
           <p className="text-xs text-stone-500 uppercase tracking-wide mb-1">Esperado</p>
           <p className="text-xl font-serif text-stone-800" data-testid="rep-esperado">{money(esperado)}</p>
@@ -1885,6 +1893,7 @@ function Votaciones({ votaciones, currentUser, hoy, onCrear, onVotar, onCerrar }
 }
 
 export default function App({ hoy: hoyProp } = {}) {
+  const [menuAbierto, setMenuAbierto] = useState(false);
   const hoy = hoyProp ?? hoyLocal();
   const [residentes, setResidentes] = useState(initialResidentes);
   const [cuotas, setCuotas] = useState(initialCuotas);
@@ -2149,15 +2158,56 @@ export default function App({ hoy: hoyProp } = {}) {
     }
   }
 
+  const enfoque = "focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-400";
+
   return (
-    <div className="min-h-screen bg-stone-50 flex text-stone-800">
-      <aside className="w-64 shrink-0 bg-emerald-900 text-emerald-50 flex flex-col print:hidden">
+    <div className="min-h-screen bg-stone-50 md:flex text-stone-800">
+      <a href="#contenido" className="sr-only focus:not-sr-only focus:absolute focus:z-[60] focus:top-2 focus:left-2 focus:bg-white focus:text-emerald-900 focus:px-3 focus:py-2 focus:rounded focus:shadow">
+        Saltar al contenido
+      </a>
+
+      {/* Barra superior: solo en pantallas pequeñas (M6) */}
+      <header className="md:hidden sticky top-0 z-30 flex items-center justify-between bg-emerald-900 text-emerald-50 px-4 py-3 print:hidden">
+        <div className="flex items-center gap-2 min-w-0">
+          <Trees size={20} className="text-amber-400 shrink-0" />
+          <p className="font-serif text-lg leading-tight truncate">S.U.D.I.</p>
+        </div>
+        <button
+          type="button"
+          onClick={() => setMenuAbierto(true)}
+          aria-label="Abrir menú"
+          aria-expanded={menuAbierto}
+          aria-controls="menu-principal"
+          className={`p-2 -mr-2 rounded hover:bg-emerald-800 ${enfoque}`}
+        >
+          <Menu size={22} />
+        </button>
+      </header>
+
+      {menuAbierto && (
+        <div className="fixed inset-0 z-40 bg-black/40 md:hidden print:hidden" onClick={() => setMenuAbierto(false)} aria-hidden="true" />
+      )}
+
+      <aside
+        id="menu-principal"
+        className={`fixed inset-y-0 left-0 z-50 w-64 max-w-[85vw] overflow-y-auto transition-transform duration-200 ${
+          menuAbierto ? "translate-x-0" : "-translate-x-full invisible"
+        } md:visible md:static md:translate-x-0 md:shrink-0 md:max-w-none bg-emerald-900 text-emerald-50 flex flex-col print:hidden`}
+      >
         <div className="flex items-center gap-2 px-5 py-5 border-b border-emerald-800">
           <Trees size={22} className="text-amber-400" />
-          <div>
+          <div className="flex-1">
             <p className="font-serif text-lg leading-tight">S.U.D.I.</p>
             <p className="text-xs text-emerald-300 leading-tight">Residencial Los Robles</p>
           </div>
+          <button
+            type="button"
+            onClick={() => setMenuAbierto(false)}
+            aria-label="Cerrar menú"
+            className={`md:hidden p-1 rounded hover:bg-emerald-800 ${enfoque}`}
+          >
+            <X size={20} />
+          </button>
         </div>
         <nav className="flex-1 py-3">
           {TABS.map((tab, i) => {
@@ -2171,8 +2221,9 @@ export default function App({ hoy: hoyProp } = {}) {
                   <p className="px-5 pt-3 pb-1 text-[11px] uppercase tracking-wider text-emerald-400">Sprint {tab.sprint}</p>
                 )}
                 <button
-                  onClick={() => setActiveTab(tab.id)}
-                  className={`w-full flex items-center gap-3 px-5 py-2.5 text-sm text-left border-l-4 ${
+                  onClick={() => { setActiveTab(tab.id); setMenuAbierto(false); }}
+                  aria-current={active ? "page" : undefined}
+                  className={`w-full flex items-center gap-3 px-5 py-2.5 text-sm text-left border-l-4 ${enfoque} ${
                     active
                       ? "border-amber-400 bg-emerald-800 text-white"
                       : "border-transparent text-emerald-100 hover:bg-emerald-800/60"
@@ -2197,11 +2248,11 @@ export default function App({ hoy: hoyProp } = {}) {
           )}
         </div>
         <div className="px-5 py-4 border-t border-emerald-800 text-xs text-emerald-300">
-          Sprint 3 · Proyecto S.U.D.I.<br />Materia Proyecto 2 — Scrum
+          Sprint 3 · Revisión de la Unidad 4<br />Materia Proyecto 2 — Scrum
         </div>
       </aside>
 
-      <main className="flex-1 px-8 py-8 max-w-4xl">
+      <main id="contenido" tabIndex={-1} className="flex-1 min-w-0 px-4 py-6 sm:px-6 md:px-8 md:py-8 max-w-4xl focus:outline-none">
         {currentUser && urgentes.length > 0 && activeTab !== "avisos" && (
           <button
             onClick={() => setActiveTab("avisos")}
