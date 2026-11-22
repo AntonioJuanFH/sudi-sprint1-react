@@ -77,6 +77,11 @@ import {
          desplazan dentro de su recuadro), tarjetas en una columna y enlace para saltar al
          contenido. Propuesta por el Product Owner en la reunión de revisión inicial.
 
+  Producto integrador (cierre del curso):
+    M8   Publicación del sistema en GitHub Pages dentro del menú del curso, con manual de uso por
+         rol. La votación de ejemplo se mantiene abierta 10 días a partir de la fecha en que se
+         abre el sistema, para que la demostración publicada siga mostrando una votación activa.
+
   No usa backend: el estado vive en memoria (useState). Al recargar la página los datos
   vuelven a los valores iniciales. En una iteración posterior se conectará a una base de datos.
 */
@@ -1902,7 +1907,10 @@ export default function App({ hoy: hoyProp } = {}) {
   const [contactos, setContactos] = useState(initialContactos);
   const [incidencias, setIncidencias] = useState(initialIncidencias);
   const [mantenimientos, setMantenimientos] = useState(initialMantenimientos);
-  const [votaciones, setVotaciones] = useState(initialVotaciones);
+  const [votaciones, setVotaciones] = useState(() =>
+    // Producto integrador: en la versión publicada, la votación de ejemplo sigue abierta 10 días a partir de hoy.
+    initialVotaciones.map((v) => (v.id === 1 && v.cierre < hoy ? { ...v, cierre: sumarDias(hoy, 10) } : v))
+  );
   const [activeTab, setActiveTab] = useState("registro");
   const [currentUserId, setCurrentUserId] = useState(null);
 

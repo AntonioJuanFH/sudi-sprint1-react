@@ -105,6 +105,22 @@ Se acordó la propuesta **M6** y se realizó en la Actividad 2:
 Comprobación: con 375, 768 y 1280 px de ancho ninguna de las 14 secciones genera desplazamiento horizontal de la página
 (revisado con las cuentas de mesa directiva y de residente). Se agregaron 3 pruebas automáticas del menú (28 en total).
 
+## Menú del curso y sistema publicado (producto integrador)
+
+El cierre del curso se presenta en un menú web con cuatro opciones: actividades del curso (PDF), sistema
+implementado, código fuente comprimido y reporte de modificaciones.
+
+- Menú: https://antoniojuanfh.github.io/sudi-sprint1-react/
+- Sistema: https://antoniojuanfh.github.io/sudi-sprint1-react/sistema/
+- Reporte de modificaciones: https://antoniojuanfh.github.io/sudi-sprint1-react/reporte.html
+
+La fuente del menú está en `menu/`. `npm run build:menu` lo arma en `menu-dist/` y compila el sistema en
+`menu-dist/sistema/`; el resultado se publica en la rama `gh-pages`.
+
+**M8 (cierre):** el sistema queda publicado con un manual de uso por rol en el menú. Para que la demostración
+publicada siga mostrando una votación activa, la votación de ejemplo se mantiene abierta 10 días a partir de la
+fecha en que se abre el sistema.
+
 ## Equipo y responsabilidades
 
 Historias asignadas en el Product Backlog y en el Sprint Schedule de cada sprint (horas estimadas y puntos de historia).

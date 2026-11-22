@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>S.U.D.I. | Proyecto 2</title>
+  <meta name="description" content="Menú de cierre del curso Proyecto 2: actividades, sistema implementado, código fuente y reporte de modificaciones del proyecto S.U.D.I.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Schibsted+Grotesk:wght@400;500;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="estilos.css">
+</head>
+<body>
+  <a class="saltar" href="#contenido">Saltar al contenido</a>
+
+  <header class="barra">
+    <div class="envoltura">
+      <a class="marca" href="index.html">S.U.D.I. <span>Proyecto 2</span></a>
+      <button class="boton-menu" id="abrir-menu" type="button" aria-expanded="false" aria-controls="menu-curso">
+        Menú <span class="rayas" aria-hidden="true"></span>
+      </button>
+    </div>
+  </header>
+
+  <div class="panel" id="menu-curso" data-abierto="false" inert role="dialog" aria-modal="true" aria-label="Menú del curso">
+    <div class="envoltura panel-cabeza">
+      <p>S.U.D.I.</p>
+      <button class="boton-cerrar" id="cerrar-menu" type="button">Cerrar</button>
+    </div>
+    <nav class="envoltura" aria-label="Secciones">
+      <ul>
+        <li><a href="index.html#actividades"><strong>Actividades del curso</strong><span>Las entregas de las cuatro unidades, en PDF</span></a></li>
+        <li><a href="sistema/index.html"><strong>Sistema implementado</strong><span>La plataforma del residencial, lista para usar</span></a></li>
+        <li><a href="index.html#codigo"><strong>Código fuente</strong><span>Descarga en .zip y repositorio de GitHub</span></a></li>
+        <li><a href="reporte.html"><strong>Reporte de modificaciones</strong><span>Todos los ajustes, de la revisión del Sprint 1 al cierre</span></a></li>
+      </ul>
+    </nav>
+  </div>
+
+  <main id="contenido">
+    <section class="portada">
+      <div class="envoltura">
+        <div>
+          <h1>S.U.D.I.</h1>
+          <p class="subtitulo">Sistema Único de Información del Residencial Los Robles</p>
+          <p class="entrada">Plataforma web para administrar el residencial: residentes, cuotas, pagos, avisos, emergencias, incidencias, mantenimiento y votaciones. Se construyó con React en tres Sprints de Scrum durante el curso Proyecto 2.</p>
+          <dl class="datos">
+            <dt>Alumno</dt><dd>Juan Antonio Fuentes Herrera</dd>
+            <dt>Asesor</dt><dd>José Martín Valencia</dd>
+            <dt>Materia</dt><dd>Proyecto 2, UDG Virtual</dd>
+            <dt>Entrega</dt><dd>Noviembre de 2026</dd>
+          </dl>
+        </div>
+        <figure class="vitrina">
+          <img class="escritorio" src="img/sistema-escritorio.jpg" width="1920" height="1200" alt="Pantalla de reportes de recaudación del sistema en una computadora: totales esperado, recaudado y pendiente, y desglose por vivienda.">
+          <img class="celular" src="img/sistema-celular.jpg" width="780" height="1560" alt="Sección de votaciones del sistema en un celular, con resultados por opción.">
+          <figcaption>El mismo sistema en computadora y en celular.</figcaption>
+        </figure>
+      </div>
+    </section>
+
+    <section class="seccion" id="actividades" aria-labelledby="t-actividades">
+      <div class="envoltura">
+        <div class="seccion-cabeza">
+          <h2 id="t-actividades">Actividades del curso</h2>
+          <p>Las Unidades 1 y 2 prepararon el proyecto con el Product Backlog y el Sprint Schedule; en las Unidades 3 y 4 se desarrollaron los Sprints y los ajustes finales. Cada entrega abre en PDF.</p>
+        </div>
+
+        <div class="unidad">
+          <h3>Unidad 1<small>El primer sprint con Scrum</small></h3>
+          <ul class="lista">
+            <li><span class="clave">Preliminar</span><span class="nombre">¡Compartamos!<em>Foro</em></span><span class="accion"><span class="sin">Participación en foro</span></span></li>
+            <li><span class="clave">1.1</span><span class="nombre">Metodología ágil Scrum<em>Buzón</em></span><span class="accion"><span class="sin">Examen en la plataforma</span></span></li>
+            <li><span class="clave">1.2</span><span class="nombre">El product backlog<em>Buzón</em></span><span class="accion"><a href="actividades/U1_1.2_El_product_backlog.pdf">Ver PDF</a></span></li>
+            <li><span class="clave">Integradora</span><span class="nombre">Sprint, el corazón de Scrum<em>Buzón</em></span><span class="accion"><a href="actividades/U1_Integradora_Sprint_el_corazon_de_Scrum.pdf">Ver PDF</a></span></li>
+          </ul>
+        </div>
+
+        <div class="unidad">
+          <h3>Unidad 2<small>Propuesta de sprint backlog</small></h3>
+          <ul class="lista">
+            <li><span class="clave">2.1</span><span class="nombre">Aplicación de Scrum<em>Buzón</em></span><span class="accion"><a href="actividades/U2_2.1_Aplicacion_de_Scrum.pdf">Ver PDF</a></span></li>
+            <li><span class="clave">2.2</span><span class="nombre">El Sprint Schedule<em>Foro</em></span><span class="accion"><a href="actividades/U2_2.2_El_Sprint_Schedule.pdf">Ver PDF</a></span></li>
+            <li><span class="clave">Integradora</span><span class="nombre">El backlog y el Sprint Schedule del proyecto<em>Foro</em></span><span class="accion"><a href="actividades/U2_Integradora_Backlog_y_Sprint_Schedule.pdf">Ver PDF</a></span></li>
+          </ul>
+        </div>
+
+        <div class="unidad">
+          <h3>Unidad 3<small>Sprint: desarrollo, revisión y ajuste</small></h3>
+          <ul class="lista">
+            <li><span class="clave">Preliminar</span><span class="nombre">Retomando mi primer sprint<em>Foro</em></span><span class="accion"><span class="sin">Participación en foro</span></span></li>
+            <li><span class="clave">3.1</span><span class="nombre">Primera fase de desarrollo, revisión y ajuste de los Sprints<em>Buzón</em></span><span class="accion"><a href="actividades/U3_3.1_Primera_fase_de_los_Sprints.pdf">Ver PDF</a></span></li>
+            <li><span class="clave">3.2</span><span class="nombre">Segunda fase de desarrollo, revisión y ajuste de los Sprints y el backlog<em>Buzón</em></span><span class="accion"><a href="actividades/U3_3.2_Segunda_fase_de_los_Sprints.pdf">Ver PDF</a></span></li>
+            <li><span class="clave">3.3</span><span class="nombre">Tercera fase de desarrollo, revisión y ajuste de los Sprints y el backlog<em>Buzón</em></span><span class="accion"><a href="actividades/U3_3.3_Tercera_fase_de_los_Sprints.pdf">Ver PDF</a></span></li>
+            <li><span class="clave">Integradora</span><span class="nombre">Producto final de la Unidad 3<em>Buzón</em></span><span class="accion"><a href="actividades/U3_Integradora_Producto_final_U3.pdf">Ver PDF</a></span></li>
+          </ul>
+        </div>
+
+        <div class="unidad">
+          <h3>Unidad 4<small>Organización final</small></h3>
+          <ul class="lista">
+            <li><span class="clave">4.1</span><span class="nombre">Reunión de revisión inicial<em>Buzón</em></span><span class="accion"><a href="actividades/U4_4.1_Reunion_de_revision_inicial.pdf">Ver PDF</a></span></li>
+            <li><span class="clave">4.2</span><span class="nombre">Reunión para revisión de modificaciones<em>Buzón</em></span><span class="accion"><a href="actividades/U4_4.2_Revision_de_modificaciones.pdf">Ver PDF</a></span></li>
+            <li><span class="clave">Integrador</span><span class="nombre">El final del proceso<em>Buzón</em></span><span class="accion"><span class="sin">Esta entrega</span></span></li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+    <section class="seccion" id="sistema" aria-labelledby="t-sistema">
+      <div class="envoltura">
+        <div class="seccion-cabeza">
+          <h2 id="t-sistema">Sistema implementado</h2>
+          <p>Las 14 historias del Product Backlog funcionan en el navegador, en computadora y en celular. Entra con cualquiera de las cuentas de prueba; cada rol ve solo las secciones que le corresponden.</p>
+        </div>
+        <div class="dos">
+          <div>
+            <a class="boton" href="sistema/index.html">Abrir el sistema</a>
+            <p class="nota">Contraseña de todas las cuentas: 1234. Los datos son de demostración y vuelven a su estado inicial al recargar la página.</p>
+            <ul class="sprints">
+              <li><strong>Sprint 1</strong><span>Registro de residentes, roles y permisos, inicio de sesión, cuotas y estado de cuenta</span></li>
+              <li><strong>Sprint 2</strong><span>Pagos con comprobante, adeudos y notificaciones, reportes de recaudación y avisos</span></li>
+              <li><strong>Sprint 3</strong><span>Directorio de emergencia, incidencias, mantenimiento y votaciones</span></li>
+            </ul>
+          </div>
+          <div class="tabla-envoltura apilada">
+            <table>
+              <caption>Cuentas de prueba y qué puede hacer cada una</caption>
+              <thead><tr><th scope="col">Rol</th><th scope="col">Correo</th><th scope="col">Puede</th></tr></thead>
+              <tbody>
+                <tr><td class="corto">Presidente</td><td>ana.torres@losrobles.mx</td><td>Asignar roles, registrar cuotas, validar pagos y todo lo de la mesa directiva</td></tr>
+                <tr><td class="corto">Tesorería</td><td>carlos.medina@losrobles.mx</td><td>Registrar cuotas, validar pagos, avisar adeudos y todo lo de la mesa directiva</td></tr>
+                <tr><td class="corto">Secretaría</td><td>marta.reyes@losrobles.mx</td><td>Reportes, avisos, incidencias, mantenimiento, directorio y votaciones</td></tr>
+                <tr><td class="corto">Residente</td><td>jorge.paredes@losrobles.mx</td><td>Pagar y consultar su estado de cuenta, reportar incidencias, pedir mantenimiento y votar</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="seccion" id="codigo" aria-labelledby="t-codigo">
+      <div class="envoltura">
+        <div class="seccion-cabeza">
+          <h2 id="t-codigo">Código fuente</h2>
+          <p>El código de los tres Sprints y de los ajustes de la Unidad 4 está en GitHub. El archivo comprimido contiene el proyecto completo, sin las dependencias, que se instalan con npm.</p>
+        </div>
+        <div class="dos">
+          <div>
+            <div class="botones">
+              <a class="boton" href="descargas/sudi-codigo-fuente.zip" download>Descargar código fuente (.zip)</a>
+              <a class="boton secundario" href="https://github.com/AntonioJuanFH/sudi-sprint1-react">Ver en GitHub</a>
+            </div>
+            <p class="nota">Para ejecutarlo en tu computadora necesitas Node.js 18 o superior.</p>
+            <pre><code>npm install
+npm run dev</code></pre>
+          </div>
+          <ul class="estructura">
+            <li><code>src/App.jsx</code><span>Un componente por historia de usuario, la matriz de permisos y el estado de la aplicación</span></li>
+            <li><code>src/main.jsx</code><span>Punto de entrada de React</span></li>
+            <li><code>src/index.css</code><span>Estilos base con Tailwind CSS</span></li>
+            <li><code>README.md</code><span>Estado por Sprint, ajustes, permisos, cuentas de prueba y equipo</span></li>
+            <li><code>menu/</code><span>Este menú, con las actividades del curso y el reporte</span></li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+    <section class="seccion" id="reporte" aria-labelledby="t-reporte">
+      <div class="envoltura">
+        <div class="seccion-cabeza">
+          <h2 id="t-reporte">Reporte de modificaciones</h2>
+          <p>Cada revisión dejó cambios en el sistema, el backlog o el Sprint Schedule. El reporte reúne qué se cambió, de dónde salió la propuesta y en qué quedó.</p>
+        </div>
+        <ul class="fases">
+          <li><b>10</b><span>Revisión del Sprint 1</span><small>Permisos por rol, validaciones y ajustes al backlog</small></li>
+          <li><b>8</b><span>Sprint 2</span><small>Fecha límite de pago, validación de comprobantes y reportes</small></li>
+          <li><b>5</b><span>Sprint 3</span><small>Notificaciones, votaciones e historial de incidencias</small></li>
+          <li><b>2</b><span>Unidad 4 y cierre</span><small>Versión para celular y publicación del sistema</small></li>
+        </ul>
+        <a class="boton" style="margin-top:2rem" href="reporte.html">Leer el reporte completo</a>
+      </div>
+    </section>
+  </main>
+
+  <footer class="pie">
+    <div class="envoltura">
+      <p>Juan Antonio Fuentes Herrera. Proyecto 2, Licenciatura en Desarrollo de Sistemas Web, UDG Virtual.</p>
+    </div>
+  </footer>
+
+  <script src="menu.js"></script>
+</body>
+</html>
