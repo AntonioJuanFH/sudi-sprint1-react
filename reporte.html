@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Reporte de modificaciones | S.U.D.I.</title>
+  <meta name="description" content="Menú de cierre del curso Proyecto 2: actividades, sistema implementado, código fuente y reporte de modificaciones del proyecto S.U.D.I.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Schibsted+Grotesk:wght@400;500;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="estilos.css">
+</head>
+<body>
+  <a class="saltar" href="#contenido">Saltar al contenido</a>
+
+  <header class="barra">
+    <div class="envoltura">
+      <a class="marca" href="index.html">S.U.D.I. <span>Proyecto 2</span></a>
+      <button class="boton-menu" id="abrir-menu" type="button" aria-expanded="false" aria-controls="menu-curso">
+        Menú <span class="rayas" aria-hidden="true"></span>
+      </button>
+    </div>
+  </header>
+
+  <div class="panel" id="menu-curso" data-abierto="false" inert role="dialog" aria-modal="true" aria-label="Menú del curso">
+    <div class="envoltura panel-cabeza">
+      <p>S.U.D.I.</p>
+      <button class="boton-cerrar" id="cerrar-menu" type="button">Cerrar</button>
+    </div>
+    <nav class="envoltura" aria-label="Secciones">
+      <ul>
+        <li><a href="index.html#actividades"><strong>Actividades del curso</strong><span>Las entregas de las cuatro unidades, en PDF</span></a></li>
+        <li><a href="sistema/index.html"><strong>Sistema implementado</strong><span>La plataforma del residencial, lista para usar</span></a></li>
+        <li><a href="index.html#codigo"><strong>Código fuente</strong><span>Descarga en .zip y repositorio de GitHub</span></a></li>
+        <li><a href="reporte.html"><strong>Reporte de modificaciones</strong><span>Todos los ajustes, de la revisión del Sprint 1 al cierre</span></a></li>
+      </ul>
+    </nav>
+  </div>
+
+  <main id="contenido">
+    <section class="reporte-portada"><div class="envoltura">
+      <h1>Reporte de modificaciones</h1>
+      <p>Las modificaciones salieron de las revisiones de cada Sprint con el Product Owner (Diego Said Viveros) y la Scrum Master (Ana Hernández), de la revisión técnica del código y de las reuniones de la Unidad 4. Todas las marcadas como hechas están en el código de GitHub o en los documentos del curso.</p>
+      <a class="volver" href="index.html">Volver al menú</a>
+    </div></section>
+    <section class="fase"><div class="envoltura"><h2>Revisión del Sprint 1</h2><p>Unidad 3, Actividad 3.1. Diez ajustes al backlog, al Sprint Schedule y al código del Sprint 1.</p><div class="tabla-envoltura"><table><caption>Ajustes A1 a A10</caption><thead><tr><th scope="col">#</th><th scope="col">Origen</th><th scope="col">Modificación</th><th scope="col">Dónde</th><th scope="col">Estado</th></tr></thead><tbody>
+<tr><td class="corto">A1</td><td>Product Owner</td><td>Marcar HU-01, HU-02 y HU-04 como prioridad “Alta (crítica)”.</td><td>Product Backlog</td><td class="estado hecho">Hecho</td></tr>
+<tr><td class="corto">A2</td><td>Product Owner</td><td>Dejar vacías las celdas en cero del Sprint Schedule.</td><td>Sprint Schedule</td><td class="estado hecho">Hecho</td></tr>
+<tr><td class="corto">A3</td><td>Product Owner</td><td>Salto de página después de cada tema principal.</td><td>Documento</td><td class="estado hecho">Hecho</td></tr>
+<tr><td class="corto">A4</td><td>Scrum Master</td><td>Registrar responsable y estado de cada ajuste.</td><td>Documento</td><td class="estado hecho">Hecho</td></tr>
+<tr><td class="corto">A5</td><td>Revisión técnica</td><td>Exigir contraseña de al menos 4 caracteres.</td><td>HU-01</td><td class="estado hecho">Hecho</td></tr>
+<tr><td class="corto">A6</td><td>Revisión técnica</td><td>Restringir cada sección según el rol y mostrar la matriz de permisos.</td><td>HU-02</td><td class="estado hecho">Hecho</td></tr>
+<tr><td class="corto">A7</td><td>Revisión técnica</td><td>Aplicar de inmediato el cambio de rol en la sesión abierta.</td><td>HU-02</td><td class="estado hecho">Hecho</td></tr>
+<tr><td class="corto">A8</td><td>Revisión técnica</td><td>Normalizar el correo (espacios y mayúsculas) al registrar e iniciar sesión.</td><td>HU-01 y HU-03</td><td class="estado hecho">Hecho</td></tr>
+<tr><td class="corto">A9</td><td>Revisión técnica</td><td>Limitar el estado de cuenta de un residente a su propia cuenta.</td><td>HU-05</td><td class="estado hecho">Hecho</td></tr>
+<tr><td class="corto">A10</td><td>Calendario</td><td>Reprogramar los Sprints 2 y 3 y marcarlos como planificados para que concuerden con GitHub.</td><td>Sprint Schedule</td><td class="estado hecho">Hecho</td></tr>
+</tbody></table></div></div></section>
+    <section class="fase"><div class="envoltura"><h2>Sprint 2</h2><p>Unidad 3, Actividad 3.2. Ajustes hechos al desarrollar pagos, adeudos, reportes y avisos.</p><div class="tabla-envoltura"><table><caption>Ajustes A11 a A18</caption><thead><tr><th scope="col">#</th><th scope="col">Origen</th><th scope="col">Modificación</th><th scope="col">Dónde</th><th scope="col">Estado</th></tr></thead><tbody>
+<tr><td class="corto">A11</td><td>Pendiente P1</td><td>Fecha límite de pago obligatoria; el estatus “Vencida” se calcula con ella.</td><td>HU-04</td><td class="estado hecho">Hecho</td></tr>
+<tr><td class="corto">A12</td><td>Planeación</td><td>El comprobante de pago solo acepta imagen o PDF.</td><td>HU-06</td><td class="estado hecho">Hecho</td></tr>
+<tr><td class="corto">A13</td><td>Revisión técnica</td><td>Una cuota pasa a pagada solo por validación o pago en ventanilla.</td><td>HU-04 y HU-06</td><td class="estado hecho">Hecho</td></tr>
+<tr><td class="corto">A14</td><td>Revisión técnica</td><td>Nadie puede validar su propio comprobante.</td><td>HU-06</td><td class="estado hecho">Hecho</td></tr>
+<tr><td class="corto">A15</td><td>Planeación</td><td>Recordatorio para las cuotas que vencen en 3 días.</td><td>HU-07</td><td class="estado hecho">Hecho</td></tr>
+<tr><td class="corto">A16</td><td>Planeación</td><td>Exportar el reporte a CSV e imprimirlo o guardarlo como PDF.</td><td>HU-08</td><td class="estado hecho">Hecho</td></tr>
+<tr><td class="corto">A17</td><td>Planeación</td><td>Historial de avisos y notificaciones urgentes.</td><td>HU-10</td><td class="estado hecho">Hecho</td></tr>
+<tr><td class="corto">A18</td><td>Planeación del Sprint 2</td><td>Integrar P1 al Sprint 2 (de 68 a 70 h) y actualizar backlog y Schedule.</td><td>Backlog y Sprint Schedule</td><td class="estado hecho">Hecho</td></tr>
+</tbody></table></div></div></section>
+    <section class="fase"><div class="envoltura"><h2>Sprint 3</h2><p>Unidad 3, Actividad 3.3 y producto final de la unidad. Ajustes de emergencias, incidencias, mantenimiento y votaciones.</p><div class="tabla-envoltura"><table><caption>Ajustes A19 a A23</caption><thead><tr><th scope="col">#</th><th scope="col">Origen</th><th scope="col">Modificación</th><th scope="col">Dónde</th><th scope="col">Estado</th></tr></thead><tbody>
+<tr><td class="corto">A19</td><td>Criterio de HU-13</td><td>El residente recibe aviso cuando su mantenimiento concluye; la sección pasa a “Mis notificaciones”.</td><td>HU-13 y HU-07</td><td class="estado hecho">Hecho</td></tr>
+<tr><td class="corto">A20</td><td>Criterio de HU-14</td><td>El conteo de una votación aparece solo al cerrarla; un voto por residente.</td><td>HU-14</td><td class="estado hecho">Hecho</td></tr>
+<tr><td class="corto">A21</td><td>Criterios de HU-12 y HU-13</td><td>Historial de estatus en incidencias; el mantenimiento no se asigna sin responsable.</td><td>HU-12 y HU-13</td><td class="estado hecho">Hecho</td></tr>
+<tr><td class="corto">A22</td><td>Lección del Sprint 2</td><td>Empezar el Sprint 3 por HU-14 y reservar tiempo de pruebas.</td><td>Sprint 3</td><td class="estado hecho">Hecho</td></tr>
+<tr><td class="corto">A23</td><td>Cierre del Sprint 3</td><td>HU-11 a HU-14 completadas en el backlog; Sprint Schedule actualizado.</td><td>Backlog y Sprint Schedule</td><td class="estado hecho">Hecho</td></tr>
+</tbody></table></div></div></section>
+    <section class="fase"><div class="envoltura"><h2>Unidad 4 y cierre del curso</h2><p>Propuestas acordadas en la reunión de revisión inicial y realizadas en la Actividad 4.2 y en esta entrega.</p><div class="tabla-envoltura"><table><caption>Modificaciones realizadas</caption><thead><tr><th scope="col">#</th><th scope="col">Origen</th><th scope="col">Modificación</th><th scope="col">Dónde</th><th scope="col">Estado</th></tr></thead><tbody>
+<tr><td class="corto">M6</td><td>Product Owner (Actividad 4.1)</td><td>Versión para celular: menú desplegable, contenido sin desbordes y mejoras de accesibilidad.</td><td>Todo el sistema</td><td class="estado hecho">Hecho, Actividad 4.2</td></tr>
+<tr><td class="corto">M8</td><td>Revisión inicial (Actividad 4.1)</td><td>Publicar el sistema en este menú con un manual de uso por rol; la votación de ejemplo queda abierta 10 días desde que se abre el sistema.</td><td>Publicación y HU-14</td><td class="estado hecho">Hecho, producto integrador</td></tr>
+</tbody></table></div></div></section>
+    <section class="fase"><div class="envoltura"><h2>Pendientes de las revisiones</h2><p>Puntos que quedaron abiertos en alguna revisión y cómo se cerraron.</p><div class="tabla-envoltura"><table><caption>Pendientes P1 a P6</caption><thead><tr><th scope="col">#</th><th scope="col">Origen</th><th scope="col">Modificación</th><th scope="col">Dónde</th><th scope="col">Estado</th></tr></thead><tbody>
+<tr><td class="corto">P1</td><td>Revisión del Sprint 1</td><td>Fecha límite de pago en las cuotas.</td><td>HU-04</td><td class="estado hecho">Cerrado con A11</td></tr>
+<tr><td class="corto">P2</td><td>Roles de Scrum</td><td>Presentar el Sprint 2 al Product Owner y a la Scrum Master.</td><td>Sprint 2</td><td class="estado hecho">Cerrado</td></tr>
+<tr><td class="corto">P3</td><td>Lección del Sprint 2</td><td>Empezar el Sprint 3 por la historia más grande.</td><td>Sprint 3</td><td class="estado hecho">Cerrado con A22</td></tr>
+<tr><td class="corto">P4</td><td>Scrum Master</td><td>Persistencia de datos y notificaciones automáticas.</td><td>Futuras iteraciones</td><td class="estado otro">Pasa a M1 y M3</td></tr>
+<tr><td class="corto">P5</td><td>Roles de Scrum</td><td>Presentar el Sprint 3 al Product Owner y a la Scrum Master.</td><td>Sprint 3</td><td class="estado hecho">Cerrado</td></tr>
+<tr><td class="corto">P6</td><td>Product Owner y Scrum Master</td><td>Validar los flujos principales y reforzar las pruebas.</td><td>Producto final</td><td class="estado hecho">Cerrado (25 pruebas)</td></tr>
+</tbody></table></div></div></section>
+    <section class="fase"><div class="envoltura"><h2>Siguiente iteración</h2><p>Propuestas de la reunión de revisión inicial que requieren servidor, base de datos o más tiempo. Quedan registradas para continuar el proyecto.</p><div class="tabla-envoltura"><table><caption>Propuestas para la siguiente iteración</caption><thead><tr><th scope="col">#</th><th scope="col">Origen</th><th scope="col">Modificación</th><th scope="col">Dónde</th><th scope="col">Estado</th></tr></thead><tbody>
+<tr><td class="corto">M1</td><td>Developer</td><td>Guardar los datos en una base de datos con servidor.</td><td>Todo el sistema</td><td class="estado otro">Siguiente iteración</td></tr>
+<tr><td class="corto">M2</td><td>Developer</td><td>Cifrar contraseñas y quitar las cuentas de prueba de la versión liberada.</td><td>HU-01 y HU-03</td><td class="estado otro">Siguiente iteración</td></tr>
+<tr><td class="corto">M3</td><td>Scrum Master</td><td>Enviar las notificaciones por correo o mensaje.</td><td>HU-07, HU-10 y HU-13</td><td class="estado otro">Siguiente iteración</td></tr>
+<tr><td class="corto">M4</td><td>Scrum Master</td><td>Incluir las pruebas automáticas en el repositorio.</td><td>Repositorio</td><td class="estado otro">Siguiente iteración</td></tr>
+<tr><td class="corto">M5</td><td>Product Owner</td><td>Validar los flujos con usuarios reales del residencial.</td><td>Todo el sistema</td><td class="estado otro">Siguiente iteración</td></tr>
+<tr><td class="corto">M7</td><td>Developer</td><td>Dividir src/App.jsx en archivos por componente.</td><td>Código</td><td class="estado otro">Siguiente iteración</td></tr>
+</tbody></table></div></div></section>
+    <div class="envoltura" style="padding-bottom:3rem"><a class="volver" href="index.html">Volver al menú</a></div>
+  </main>
+
+  <footer class="pie">
+    <div class="envoltura">
+      <p>Juan Antonio Fuentes Herrera. Proyecto 2, Licenciatura en Desarrollo de Sistemas Web, UDG Virtual.</p>
+    </div>
+  </footer>
+
+  <script src="menu.js"></script>
+</body>
+</html>
